@@ -1,38 +1,50 @@
-import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 const COOKIE_NAME = "invoice_session";
 
-function secret() {
+function getSecret() {
   const value = process.env.AUTH_SECRET;
+
   if (!value || value.length < 32) {
     throw new Error("AUTH_SECRET must be at least 32 characters.");
   }
+
   return new TextEncoder().encode(value);
 }
 
-export async function verifyCredentials(username: string, password: string) {
+export async function verifyCredentials(
+  username: string,
+  password: string
+) {
   const expectedUsername = process.env.APP_USERNAME;
   const expectedPassword = process.env.APP_PASSWORD;
 
-  if (!expectedUsername || !expectedPassword) return false;
+  if (!expectedUsername || !expectedPassword) {
+    return false;
+  }
 
-  if (username !== expectedUsername) return false;
-
-  return password === expectedPassword;
+  return (
+    username === expectedUsername &&
+    password === expectedPassword
+  );
 }
 
 export async function createSession() {
-  const token = await new SignJWT({ role: "owner" })
-    .setProtectedHeader({ alg: "HS256" })
+  const token = await new SignJWT({
+    role: "owner",
+  })
+    .setProtectedHeader({
+      alg: "HS256",
+    })
     .setIssuedAt()
     .setExpirationTime("7d")
-    .sign(secret());
+    .sign(getSecret());
 
-  const store = await cookies();
-  store.set(COOKIE_NAME, token, {
+  const cookieStore = await cookies();
+
+  cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
@@ -42,8 +54,9 @@ export async function createSession() {
 }
 
 export async function destroySession() {
-  const store = await cookies();
-  store.set(COOKIE_NAME, "", {
+  const cookieStore = await cookies();
+
+  cookieStore.set(COOKIE_NAME, "", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
@@ -54,10 +67,13 @@ export async function destroySession() {
 
 export async function isAuthenticated() {
   const token = (await cookies()).get(COOKIE_NAME)?.value;
-  if (!token) return false;
+
+  if (!token) {
+    return false;
+  }
 
   try {
-    await jwtVerify(token, secret());
+    await jwtVerify(token, getSecret());
     return true;
   } catch {
     return false;
@@ -65,12 +81,11 @@ export async function isAuthenticated() {
 }
 
 export async function requirePageAuth() {
-  if (!(await isAuthenticated())) redirect("/login");
+  if (!(await isAuthenticated())) {
+    redirect("/login");
+  }
 }
 
 export async function requireApiAuth() {
-  if (!(await isAuthenticated())) {
-    return false;
-  }
-  return true;
+  return await isAuthenticated();
 }
