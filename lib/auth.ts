@@ -5,13 +5,17 @@ import { redirect } from "next/navigation";
 const COOKIE_NAME = "invoice_session";
 
 function getSecret() {
-  const value = process.env.AUTH_SECRET;
+  const secret = process.env.AUTH_SECRET;
 
-  if (!value || value.length < 32) {
+  if (!secret) {
+    throw new Error("AUTH_SECRET is not configured.");
+  }
+
+  if (secret.length < 32) {
     throw new Error("AUTH_SECRET must be at least 32 characters.");
   }
 
-  return new TextEncoder().encode(value);
+  return new TextEncoder().encode(secret);
 }
 
 export async function verifyCredentials(
@@ -46,7 +50,7 @@ export async function createSession() {
 
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: true,
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 7,
@@ -58,7 +62,7 @@ export async function destroySession() {
 
   cookieStore.set(COOKIE_NAME, "", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: true,
     sameSite: "lax",
     path: "/",
     maxAge: 0,
