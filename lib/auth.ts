@@ -15,10 +15,13 @@ function secret() {
 
 export async function verifyCredentials(username: string, password: string) {
   const expectedUsername = process.env.APP_USERNAME;
-  const hash = process.env.APP_PASSWORD_HASH;
-  if (!expectedUsername || !hash) return false;
+  const expectedPassword = process.env.APP_PASSWORD;
+
+  if (!expectedUsername || !expectedPassword) return false;
+
   if (username !== expectedUsername) return false;
-  return bcrypt.compare(password, hash);
+
+  return password === expectedPassword;
 }
 
 export async function createSession() {
