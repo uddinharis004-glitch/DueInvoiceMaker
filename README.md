@@ -39,7 +39,9 @@ Generate your password hash:
 npm run hash-password
 ```
 
-Paste the returned hash into `APP_PASSWORD_HASH`.
+Paste the returned hash into `APP_PASSWORD_HASH`. Set `APP_USERNAME` to the username you want to use.
+
+For compatibility with older deployments, `APP_PASSWORD` is also supported as a plain-text fallback. `APP_PASSWORD_HASH` is preferred and takes priority when both are set.
 
 Generate a strong `AUTH_SECRET`, for example:
 
@@ -49,9 +51,11 @@ node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
 
 Put it in `AUTH_SECRET`.
 
-## 4. Create the database
+## 4. Connect the database
 
-Create a PostgreSQL database, then run:
+Set `DATABASE_URL` to a hosted PostgreSQL connection string. Vercel's Neon integration can create this variable automatically when the custom prefix is `DATABASE`.
+
+The application creates missing tables automatically on its first authenticated request. You may also initialize them manually with:
 
 ```bash
 npm run db:init

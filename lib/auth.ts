@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -23,16 +24,20 @@ export async function verifyCredentials(
   password: string
 ) {
   const expectedUsername = process.env.APP_USERNAME;
+  const passwordHash = process.env.APP_PASSWORD_HASH;
   const expectedPassword = process.env.APP_PASSWORD;
 
-  if (!expectedUsername || !expectedPassword) {
+  if (!expectedUsername || (!passwordHash && !expectedPassword)) {
     return false;
   }
 
-  return (
-    username === expectedUsername &&
-    password === expectedPassword
-  );
+  if (username !== expectedUsername) return false;
+
+  if (passwordHash) {
+    return bcrypt.compare(password, passwordHash);
+  }
+
+  return password === expectedPassword;
 }
 
 export async function createSession() {
