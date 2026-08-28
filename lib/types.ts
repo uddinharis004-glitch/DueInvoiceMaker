@@ -68,6 +68,8 @@ export type InvoiceRecord = {
   tax_rate: string;
   tax_enabled: boolean;
   total: string;
+  cash_paid: string;
+  card_paid: string;
   payment_made: string;
   balance_due: string;
   payment_status: string;

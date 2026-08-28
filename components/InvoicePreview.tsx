@@ -1,7 +1,7 @@
 import { money, formatInvoiceDate } from "@/lib/utils";
 
 export default function InvoicePreview(props:any){
-  const {company,address,customer,invoiceNumber,invoiceDate,dueDate,terms,lines,subtotal,discount,tax,total,paymentMade,balanceDue,taxEnabled}=props;
+  const {company,address,customer,invoiceNumber,invoiceDate,dueDate,terms,lines,subtotal,discount,tax,total,cashPaid=0,cardPaid=0,paymentMade,balanceDue,taxEnabled}=props;
   return <div className="invoice-page">
     <div className="invoice-header">
       <div className="invoice-company">
@@ -20,7 +20,6 @@ export default function InvoicePreview(props:any){
         <div className="balance">{money(balanceDue)}</div>
         <div className="invoice-dates">
           <div><span>Invoice Date :</span> {formatInvoiceDate(invoiceDate)}</div>
-          <div><span>Terms :</span> {terms ? terms.split("\n")[0] : "Due on Receipt"}</div>
           <div><span>Due Date :</span> {dueDate ? formatInvoiceDate(dueDate) : formatInvoiceDate(invoiceDate)}</div>
         </div>
       </div>
@@ -57,7 +56,9 @@ export default function InvoicePreview(props:any){
       {discount>0&&<div className="total-row"><span>Discount (-)</span><span>{money(discount)}</span></div>}
       {taxEnabled&&tax>0&&<div className="total-row"><span>Tax</span><span>{money(tax)}</span></div>}
       <div className="total-row strong"><span>Total</span><span>{money(total)}</span></div>
-      {paymentMade>0&&<div className="total-row payment"><span>Payment Made (-)</span><span>{money(paymentMade)}</span></div>}
+      {cashPaid>0&&<div className="total-row payment"><span>Cash Payment (-)</span><span>{money(cashPaid)}</span></div>}
+      {cardPaid>0&&<div className="total-row payment"><span>Card Payment (-)</span><span>{money(cardPaid)}</span></div>}
+      {paymentMade>0&&cashPaid<=0&&cardPaid<=0&&<div className="total-row payment"><span>Payment Made (-)</span><span>{money(paymentMade)}</span></div>}
       <div className="total-row strong balance"><span>Balance Due</span><span>{money(balanceDue)}</span></div>
     </div>
 

@@ -54,6 +54,9 @@ CREATE TABLE IF NOT EXISTS invoices (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS cash_paid NUMERIC(14,2) NOT NULL DEFAULT 0;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS card_paid NUMERIC(14,2) NOT NULL DEFAULT 0;
+
 CREATE INDEX IF NOT EXISTS invoices_created_at_idx ON invoices(created_at DESC);
 CREATE INDEX IF NOT EXISTS invoices_status_idx ON invoices(payment_status);
 `;

@@ -15,8 +15,9 @@ export default function InvoiceForm({company,addresses,customers,items,taxRates}
   const [terms,setTerms]=useState(company.default_terms??"");
   const [taxEnabled,setTaxEnabled]=useState(!!company.default_tax_enabled);
   const [taxRate,setTaxRate]=useState(Number(company.default_tax_rate??0));
-  const [paymentMade,setPaymentMade]=useState(0);
-  const [paymentMethod,setPaymentMethod]=useState("");
+  const [paymentStatus,setPaymentStatus]=useState<"UNPAID"|"PAID">("UNPAID");
+  const [cashPaid,setCashPaid]=useState(0);
+  const [cardPaid,setCardPaid]=useState(0);
   const [paymentDate,setPaymentDate]=useState("");
   const [notes,setNotes]=useState("");
   const [lines,setLines]=useState<InvoiceLineInput[]>([]);
@@ -26,6 +27,7 @@ export default function InvoiceForm({company,addresses,customers,items,taxRates}
   const customer=customers.find(c=>c.id===customerId)??customers[0];
   const address=addresses.find(a=>a.id===addressId)??defaultAddress;
   const calc=useMemo(()=>calculateInvoice(lines,taxEnabled,taxRate),[lines,taxEnabled,taxRate]);
+  const paymentMade=paymentStatus==="PAID" ? Math.round((cashPaid+cardPaid+Number.EPSILON)*100)/100 : 0;
 
   useEffect(() => {
     if (!customer?.zip || !taxEnabled) return;
@@ -40,9 +42,11 @@ export default function InvoiceForm({company,addresses,customers,items,taxRates}
   function update(id:string,patch:Partial<InvoiceLineInput>){setLines(v=>v.map(l=>l.id===id?{...l,...patch}:l))}
   function remove(id:string){setLines(v=>v.filter(l=>l.id!==id))}
   async function save(){
+    if(paymentStatus==="PAID"&&paymentMade<=0){setError("Enter the amount paid by cash, card, or both.");return;}
+    if(paymentMade>calc.total){setError("Cash and card payments cannot be more than the invoice total.");return;}
     setBusy(true);setError("");
     const res=await fetch("/api/invoices",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-      invoiceDate,dueDate,terms,taxEnabled,taxRate,paymentMade,paymentMethod,paymentDate,notes,
+      invoiceDate,dueDate,terms,taxEnabled,taxRate,paymentStatus,cashPaid,cardPaid,paymentDate,notes,
       customerId,addressId,lines
     })});
     const data=await res.json();
@@ -109,16 +113,20 @@ export default function InvoiceForm({company,addresses,customers,items,taxRates}
             <label>Tax<select className="select" value={String(taxEnabled)} onChange={e=>setTaxEnabled(e.target.value==="true")}><option value="false">No tax</option><option value="true">Tax enabled</option></select></label>
             <label>Tax rate (%)<input className="input" type="number" min="0" step="0.0001" disabled={!taxEnabled} value={taxRate} onChange={e=>setTaxRate(Number(e.target.value))}/></label>
             <label>ZIP tax lookup<select className="select" disabled={!taxEnabled} value="" onChange={e=>{const t=taxRates.find(x=>x.zip===e.target.value);if(t)setTaxRate(Number(t.rate));}}><option value="">Select ZIP rate...</option>{taxRates.map(t=><option key={t.id} value={t.zip}>{t.zip} — {t.rate}% {t.label}</option>)}</select></label>
-            <label>Payment made<input className="input" type="number" min="0" step="0.01" value={paymentMade} onChange={e=>setPaymentMade(Number(e.target.value))}/></label>
-            <label>Payment method<select className="select" value={paymentMethod} onChange={e=>setPaymentMethod(e.target.value)}><option value="">Not paid</option><option>Cash</option><option>Credit Card</option><option>Debit Card</option><option>Check</option><option>Bank Transfer</option><option>Other</option></select></label>
-            <label>Payment date<input className="input" type="date" value={paymentDate} onChange={e=>setPaymentDate(e.target.value)}/></label>
+            <label>Payment status<select className="select" value={paymentStatus} onChange={e=>{const value=e.target.value as "UNPAID"|"PAID";setPaymentStatus(value);if(value==="UNPAID"){setCashPaid(0);setCardPaid(0);setPaymentDate("");}else if(!paymentDate){setPaymentDate(new Date().toISOString().slice(0,10));}}}><option value="UNPAID">Not paid</option><option value="PAID">Paid / payment received</option></select></label>
+            {paymentStatus==="PAID"&&<>
+              <label>Amount paid with cash<input className="input" type="number" min="0" max={calc.total} step="0.01" value={cashPaid} onChange={e=>setCashPaid(Math.max(0,Number(e.target.value)))}/></label>
+              <label>Amount paid with card<input className="input" type="number" min="0" max={calc.total} step="0.01" value={cardPaid} onChange={e=>setCardPaid(Math.max(0,Number(e.target.value)))}/></label>
+              <label>Total payment<input className="input" value={paymentMade.toFixed(2)} readOnly/></label>
+              <label>Payment date<input className="input" type="date" value={paymentDate} onChange={e=>setPaymentDate(e.target.value)}/></label>
+            </>}
             <label className="full">Internal notes<textarea className="textarea" value={notes} onChange={e=>setNotes(e.target.value)}/></label>
           </div>
         </div>
       </div>
 
       <div className="preview-wrap">
-        <InvoicePreview company={company} address={address} customer={customer} invoiceNumber="PREVIEW" invoiceDate={invoiceDate} dueDate={dueDate} terms={terms} lines={calc.lines} subtotal={calc.subtotal} discount={calc.discount} tax={calc.tax} total={calc.total} paymentMade={paymentMade} balanceDue={Math.max(0,calc.total-paymentMade)} taxEnabled={taxEnabled} />
+        <InvoicePreview company={company} address={address} customer={customer} invoiceNumber="PREVIEW" invoiceDate={invoiceDate} dueDate={dueDate} terms={terms} lines={calc.lines} subtotal={calc.subtotal} discount={calc.discount} tax={calc.tax} total={calc.total} cashPaid={cashPaid} cardPaid={cardPaid} paymentMade={paymentMade} balanceDue={Math.max(0,calc.total-paymentMade)} taxEnabled={taxEnabled} />
       </div>
     </div>
   </>;

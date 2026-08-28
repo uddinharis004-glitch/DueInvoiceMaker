@@ -25,6 +25,8 @@ export default async function PrintPage({searchParams}:{searchParams:Promise<{id
       discount={Number(invoice.discount)}
       tax={Number(invoice.tax)}
       total={Number(invoice.total)}
+      cashPaid={Number(invoice.cash_paid)}
+      cardPaid={Number(invoice.card_paid)}
       paymentMade={Number(invoice.payment_made)}
       balanceDue={Number(invoice.balance_due)}
       taxEnabled={invoice.tax_enabled}

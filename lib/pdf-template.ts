@@ -68,7 +68,6 @@ ${company.website?`<div class="company-line">${esc(company.website)}</div>`:""}
 <div class="balance">${money(invoice.balance_due)}</div>
 <div class="dates">
 <div><span>Invoice Date :</span> ${formatInvoiceDate(invoice.invoice_date)}</div>
-<div><span>Terms :</span> ${esc(invoice.terms).split("\n")[0] || "Due on Receipt"}</div>
 <div><span>Due Date :</span> ${invoice.due_date?formatInvoiceDate(invoice.due_date):formatInvoiceDate(invoice.invoice_date)}</div>
 </div>
 </div>
@@ -82,7 +81,9 @@ ${company.website?`<div class="company-line">${esc(company.website)}</div>`:""}
 ${Number(invoice.discount)>0?`<div class="total"><span>Discount (-)</span><span>${money(invoice.discount)}</span></div>`:""}
 ${taxEnabled&&Number(invoice.tax)>0?`<div class="total"><span>Tax</span><span>${money(invoice.tax)}</span></div>`:""}
 <div class="total strong"><span>Total</span><span>${money(invoice.total)}</span></div>
-${Number(invoice.payment_made)>0?`<div class="total payment"><span>Payment Made (-)</span><span>${money(invoice.payment_made)}</span></div>`:""}
+${Number(invoice.cash_paid)>0?`<div class="total payment"><span>Cash Payment (-)</span><span>${money(invoice.cash_paid)}</span></div>`:""}
+${Number(invoice.card_paid)>0?`<div class="total payment"><span>Card Payment (-)</span><span>${money(invoice.card_paid)}</span></div>`:""}
+${Number(invoice.payment_made)>0&&Number(invoice.cash_paid)<=0&&Number(invoice.card_paid)<=0?`<div class="total payment"><span>Payment Made (-)</span><span>${money(invoice.payment_made)}</span></div>`:""}
 <div class="total strong due"><span>Balance Due</span><span>${money(invoice.balance_due)}</span></div>
 </div>
 <div class="thanks">Thanks for your business.</div>
