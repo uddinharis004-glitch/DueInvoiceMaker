@@ -5,6 +5,8 @@ import { rm } from "node:fs/promises";
 
 let cachedExecutablePath: string | undefined;
 
+chromium.setGraphicsMode = false;
+
 async function getExecutablePath() {
   if (process.env.CHROME_EXECUTABLE_PATH) {
     return process.env.CHROME_EXECUTABLE_PATH;
@@ -26,15 +28,18 @@ export async function renderPdf(html: string) {
     executablePath,
     headless: true,
     args: executablePath ? chromium.args : [],
+    chromiumSandbox: false,
   });
 
   try {
-    const page = await browser.newPage({
+    const context = await browser.newContext({
       viewport: { width: 816, height: 1056 },
       deviceScaleFactor: 1,
     });
+    const page = await context.newPage();
 
-    await page.setContent(html, { waitUntil: "networkidle" });
+    await page.setContent(html, { waitUntil: "load", timeout: 30000 });
+    await page.emulateMedia({ media: "print" });
 
     return await page.pdf({
       format: "Letter",
