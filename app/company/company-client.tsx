@@ -58,23 +58,30 @@ export default function CompanyClient() {
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) return alert("Logo must be 2 MB or smaller.");
     let upload = file;
+    const objectUrl = URL.createObjectURL(file);
     try {
-      const bitmap = await createImageBitmap(file);
-      const scale = Math.min(1, 1200 / Math.max(bitmap.width, bitmap.height));
+      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const element = new Image();
+        element.onload = () => resolve(element);
+        element.onerror = () => reject(new Error("Image could not be loaded."));
+        element.src = objectUrl;
+      });
+      const scale = Math.min(1, 1200 / Math.max(image.naturalWidth, image.naturalHeight));
       const canvas = document.createElement("canvas");
-      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+      canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
       const context = canvas.getContext("2d");
       if (!context) throw new Error("Image conversion is unavailable.");
       context.fillStyle = "#ffffff";
       context.fillRect(0, 0, canvas.width, canvas.height);
-      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-      bitmap.close();
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
       const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/jpeg", 0.92));
       if (!blob) throw new Error("Image conversion failed.");
       upload = new File([blob], "company-logo.jpg", {type:"image/jpeg"});
     } catch {
-      return alert("Logo conversion failed. Please choose a PNG or JPEG image.");
+      return alert("Logo conversion failed. Please choose a valid SVG, PNG, JPEG, or WebP image.");
+    } finally {
+      URL.revokeObjectURL(objectUrl);
     }
     if (upload.size > 2 * 1024 * 1024) return alert("Converted logo must be 2 MB or smaller.");
     const fd = new FormData(); fd.append("file", upload);
@@ -115,8 +122,8 @@ export default function CompanyClient() {
           <h2 style={{marginTop:0}}>Company logo</h2>
           {form.logo_data ? <img src={form.logo_data} alt="Company logo" style={{maxWidth:220,maxHeight:100,objectFit:"contain",border:"1px solid #eee",padding:10}} /> : <p className="muted">No logo uploaded.</p>}
           <div style={{marginTop:16}}>
-            <input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>uploadLogo(e.target.files?.[0])} />
-            <p className="muted">PNG, JPG or WebP. Saved in a PDF-compatible format. Maximum 2 MB.</p>
+            <input type="file" accept="image/svg+xml,image/png,image/jpeg,image/webp,.svg" onChange={e=>uploadLogo(e.target.files?.[0])} />
+            <p className="muted">SVG, PNG, JPG or WebP. Saved in a PDF-compatible format. Maximum 2 MB.</p>
           </div>
         </div>
       </div>
