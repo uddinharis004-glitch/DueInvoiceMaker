@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["googleapis", "pdfkit"],
+  serverExternalPackages: ["googleapis", "pdfkit", "sharp"],
 };
 
 export default nextConfig;

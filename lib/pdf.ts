@@ -1,5 +1,6 @@
 import PDFDocument from "pdfkit";
-import { formatInvoiceDate, money } from "@/lib/utils";
+import sharp from "sharp";
+import { formatInvoiceDate, money } from "./utils";
 
 const LEFT = 46;
 const RIGHT = 566;
@@ -13,14 +14,18 @@ function number(value: unknown) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function addLogo(doc: PDFKit.PDFDocument, logoData: unknown) {
+async function addLogo(doc: PDFKit.PDFDocument, logoData: unknown) {
   if (typeof logoData !== "string" || !logoData.startsWith("data:image/")) return false;
   try {
     const encoded = logoData.split(",", 2)[1];
     if (!encoded) return false;
-    doc.image(Buffer.from(encoded, "base64"), LEFT, 42, { fit: [175, 62], valign: "center" });
+    // PDFKit reads PNG and JPEG reliably. Normalize uploaded PNG, JPEG, and WebP
+    // logos to PNG so the PDF uses the same logo as the browser preview.
+    const logo = await sharp(Buffer.from(encoded, "base64")).png().toBuffer();
+    doc.image(logo, LEFT, 42, { fit: [175, 62], valign: "center" });
     return true;
-  } catch {
+  } catch (error) {
+    console.warn("Invoice logo could not be rendered in the PDF", error);
     return false;
   }
 }
@@ -45,7 +50,7 @@ function totalRow(doc: PDFKit.PDFDocument, label: string, value: unknown, y: num
 }
 
 export async function renderInvoicePdf(invoice: any) {
-  const doc = new PDFDocument({ size: "LETTER", margin: 0, compress: true, info: { Title: text(invoice.invoice_number), Author: text(invoice.company_snapshot?.name) } });
+  const doc = new PDFDocument({ size: "LETTER", margin: LEFT, compress: true, info: { Title: text(invoice.invoice_number), Author: text(invoice.company_snapshot?.name) } });
   const chunks: Buffer[] = [];
   const completed = new Promise<Buffer>((resolve, reject) => {
     doc.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
@@ -57,7 +62,7 @@ export async function renderInvoicePdf(invoice: any) {
   const address = invoice.address_snapshot ?? {};
   const customer = invoice.customer_snapshot ?? {};
   const lines = Array.isArray(invoice.items) ? invoice.items : [];
-  const hasLogo = addLogo(doc, company.logo_data);
+  const hasLogo = await addLogo(doc, company.logo_data);
   let companyY = hasLogo ? 112 : 48;
 
   doc.fillColor("#1f1f1f").font("Helvetica-Bold").fontSize(15).text(text(company.name), LEFT, companyY, { width: 260 });
@@ -110,11 +115,17 @@ export async function renderInvoicePdf(invoice: any) {
   if (number(invoice.payment_made) > 0 && number(invoice.cash_paid) <= 0 && number(invoice.card_paid) <= 0) y = totalRow(doc, "Payment Made (-)", invoice.payment_made, y, { color: "#d64545" });
   y = totalRow(doc, "Balance Due", invoice.balance_due, y, { bold: true, fill: "#f1f1ef" });
 
-  const footerY = Math.min(710, Math.max(y + 28, 625));
+  let footerY = y + 50;
+  if (footerY > 730) { doc.addPage(); footerY = LEFT; }
   doc.fillColor("#1f1f1f").font("Helvetica").fontSize(9).text("Thanks for your business.", LEFT, footerY);
   if (invoice.terms) {
-    doc.font("Helvetica-Bold").fontSize(9).text("Terms & Conditions", LEFT, footerY + 28);
-    doc.font("Helvetica").fontSize(8).text(text(invoice.terms), LEFT, footerY + 42, { width: RIGHT - LEFT, height: 68, ellipsis: true });
+    const terms = text(invoice.terms);
+    const termsOptions = { width: RIGHT - LEFT, lineGap: 2 };
+    const termsHeight = doc.font("Helvetica").fontSize(8).heightOfString(terms, termsOptions);
+    let termsY = footerY + 40;
+    if (termsY + 18 + termsHeight > 746) { doc.addPage(); termsY = LEFT; }
+    doc.fillColor("#1f1f1f").font("Helvetica-Bold").fontSize(9).text("Terms & Conditions", LEFT, termsY);
+    doc.font("Helvetica").fontSize(8).text(terms, LEFT, termsY + 16, termsOptions);
   }
 
   doc.end();
