@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Toast from "@/components/Toast";
 
 const empty = {name:"",company_name:"",street:"",city:"",state:"",zip:"",phone:"",email:"",notes:""};
 
@@ -9,6 +10,7 @@ export default function CustomersClient() {
   const [form,setForm]=useState<any>(empty);
   const [editing,setEditing]=useState<string|null>(null);
   const [q,setQ]=useState("");
+  const [message,setMessage]=useState("");
 
   async function load(){ const r=await fetch("/api/customers"); const d=await r.json(); setCustomers(d.customers??[]); }
   useEffect(()=>{load()},[]);
@@ -16,13 +18,16 @@ export default function CustomersClient() {
   async function save(e:React.FormEvent){
     e.preventDefault();
     const url=editing?`/api/customers?id=${editing}`:"/api/customers";
-    await fetch(url,{method:editing?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)});
-    setForm(empty);setEditing(null);load();
+    const wasEditing=!!editing;
+    const response=await fetch(url,{method:editing?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)});
+    if(!response.ok)return;
+    setForm(empty);setEditing(null);await load();setMessage(wasEditing?"Customer updated successfully.":"Customer added successfully.");
   }
   async function remove(id:string){if(!confirm("Delete customer?"))return;await fetch(`/api/customers?id=${id}`,{method:"DELETE"});load();}
   const filtered=customers.filter(c=>`${c.name} ${c.company_name} ${c.email}`.toLowerCase().includes(q.toLowerCase()));
 
   return <>
+    {message&&<Toast message={message} onDismiss={()=>setMessage("")}/>}
     <div className="toolbar"><div><h1 className="page-title">Customers</h1><p className="muted">Reusable customer records.</p></div></div>
     <div className="grid grid-2">
       <form className="card grid" onSubmit={save}>

@@ -21,7 +21,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <main className="main">
         <header className="topbar no-print">
           <strong>Private Invoice System</strong>
-          <span className="muted">Single-user</span>
+          <span className="muted desktop-only">Single-user</span>
+          <details className="mobile-menu">
+            <summary>Menu</summary>
+            <nav>
+              <Link href="/dashboard">Dashboard</Link>
+              <Link href="/invoices">Invoices</Link>
+              <Link href="/invoices/new">New Invoice</Link>
+              <Link href="/customers">Customers</Link>
+              <Link href="/items">Items</Link>
+              <Link href="/company">Company Profile</Link>
+              <form action={logout}><button className="btn">Logout</button></form>
+            </nav>
+          </details>
         </header>
         {children}
       </main>

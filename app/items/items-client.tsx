@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Toast from "@/components/Toast";
 
 const empty={name:"",description:"",default_price:"",sku:"",taxable:true};
 
@@ -9,16 +10,20 @@ export default function ItemsClient(){
   const [form,setForm]=useState<any>(empty);
   const [editing,setEditing]=useState<string|null>(null);
   const [q,setQ]=useState("");
+  const [message,setMessage]=useState("");
   async function load(){const r=await fetch("/api/items");const d=await r.json();setItems(d.items??[])}
   useEffect(()=>{load()},[]);
   async function save(e:React.FormEvent){
     e.preventDefault(); const url=editing?`/api/items?id=${editing}`:"/api/items";
-    await fetch(url,{method:editing?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)});
-    setForm(empty);setEditing(null);load();
+    const wasEditing=!!editing;
+    const response=await fetch(url,{method:editing?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)});
+    if(!response.ok)return;
+    setForm(empty);setEditing(null);await load();setMessage(wasEditing?"Item updated successfully.":"Item added successfully.");
   }
   async function remove(id:string){if(!confirm("Delete item?"))return;await fetch(`/api/items?id=${id}`,{method:"DELETE"});load();}
   const filtered=items.filter(i=>`${i.name} ${i.description} ${i.sku}`.toLowerCase().includes(q.toLowerCase()));
   return <>
+    {message&&<Toast message={message} onDismiss={()=>setMessage("")}/>}
     <div className="toolbar"><div><h1 className="page-title">Items</h1><p className="muted">Saved products/services. Price can still be changed on each invoice.</p></div></div>
     <div className="grid grid-2">
       <form className="card grid" onSubmit={save}>

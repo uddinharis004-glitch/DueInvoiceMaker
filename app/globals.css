@@ -25,6 +25,7 @@ a { color: inherit; text-decoration: none; }
   height: 68px; background: #fff; border-bottom: 1px solid #e5e7eb;
   display: flex; align-items: center; justify-content: space-between; padding: 0 28px;
 }
+.mobile-menu { display: none; }
 .content { padding: 28px; max-width: 1400px; margin: 0 auto; }
 .page-title { margin: 0; font-size: 28px; }
 .muted { color: #6b7280; }
@@ -72,8 +73,19 @@ th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: #
 .login-card { width: min(420px, 100%); background: #fff; padding: 30px; border-radius: 14px; border: 1px solid #e5e7eb; }
 .login-card h1 { margin-top: 0; }
 .login-error { background: #fee2e2; color: #991b1b; padding: 10px; border-radius: 8px; margin-bottom: 14px; }
+.toast-success {
+  position: fixed; right: 22px; bottom: 22px; z-index: 1000;
+  display: flex; align-items: center; gap: 10px; width: min(390px, calc(100vw - 32px));
+  padding: 14px 16px; border: 1px solid #86efac; border-radius: 12px;
+  background: #f0fdf4; color: #166534; box-shadow: 0 12px 30px rgba(0,0,0,.16);
+  font-weight: 700;
+}
+.toast-icon { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #22c55e; color: #fff; }
+.toast-success button { margin-left: auto; border: 0; background: transparent; color: #166534; font-size: 22px; line-height: 1; }
 
 .invoice-editor { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 20px; }
+.invoice-preview-toggle { display: contents; }
+.invoice-preview-toggle > summary { display: none; }
 .line-editor { border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; margin-bottom: 10px; }
 .line-grid { display: grid; grid-template-columns: 1.4fr .7fr .9fr .9fr auto; gap: 8px; align-items: end; }
 .preview-wrap { background: #e5e7eb; padding: 18px; border-radius: 12px; overflow: auto; }
@@ -119,11 +131,35 @@ th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: #
 }
 @media (max-width: 700px) {
   .app-shell { display: block; }
-  .sidebar { width: 100%; height: auto; position: static; }
-  .nav { display: flex; overflow-x: auto; }
-  .content { padding: 16px; }
+  .sidebar { display: none; }
+  .desktop-only { display: none; }
+  .topbar { height: auto; min-height: 60px; padding: 10px 14px; position: sticky; top: 0; z-index: 100; }
+  .mobile-menu { display: block; position: relative; }
+  .mobile-menu summary { list-style: none; border: 1px solid #d1d5db; border-radius: 8px; padding: 9px 12px; font-weight: 700; cursor: pointer; }
+  .mobile-menu summary::-webkit-details-marker { display: none; }
+  .mobile-menu nav { position: absolute; right: 0; top: 48px; width: min(280px, calc(100vw - 28px)); display: grid; gap: 4px; padding: 10px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 14px 35px rgba(0,0,0,.18); }
+  .mobile-menu nav a { padding: 11px 12px; border-radius: 8px; }
+  .mobile-menu nav a:hover { background: #f3f4f6; }
+  .mobile-menu nav form { border-top: 1px solid #e5e7eb; padding-top: 8px; margin-top: 4px; }
+  .mobile-menu nav .btn { width: 100%; }
+  .content { padding: 14px 12px 30px; }
+  .card { padding: 14px; border-radius: 10px; }
+  .page-title { font-size: 24px; }
   .form-grid, .form-grid-3, .grid-2, .grid-4 { grid-template-columns: 1fr; }
-  .line-grid { grid-template-columns: 1fr 1fr; }
+  .line-grid { grid-template-columns: 1fr; }
+  .input, .select, .textarea { min-height: 44px; font-size: 16px; }
+  .btn { min-height: 42px; }
+  .toolbar { align-items: stretch; }
+  .toolbar > .btn.primary { width: 100%; }
+  .actions { width: 100%; }
+  .actions .btn { flex: 1 1 auto; text-align: center; }
+  .table-wrap { margin-left: -4px; margin-right: -4px; }
+  .table-wrap table { min-width: 620px; }
+  .invoice-preview-toggle { display: block; }
+  .invoice-preview-toggle > summary { display: block; margin-bottom: 10px; padding: 12px 14px; border-radius: 10px; background: #111827; color: #fff; font-weight: 700; cursor: pointer; }
+  .invoice-preview-toggle:not([open]) .preview-wrap { display: none; }
+  .preview-wrap { padding: 8px; border-radius: 10px; }
+  .toast-success { right: 16px; bottom: 16px; }
 }
 
 @media print {

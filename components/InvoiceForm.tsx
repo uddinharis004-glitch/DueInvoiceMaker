@@ -58,7 +58,7 @@ export default function InvoiceForm({company,addresses,customers,items,taxRates}
     } catch (e) {
       console.warn("Invoice saved, but Google Drive archive failed.", e);
     }
-    router.push(`/invoices/view?id=${data.invoice.id}`);
+    router.push(`/invoices/view?id=${data.invoice.id}&created=1`);
     router.refresh();
   }
 
@@ -125,9 +125,12 @@ export default function InvoiceForm({company,addresses,customers,items,taxRates}
         </div>
       </div>
 
-      <div className="preview-wrap">
-        <InvoicePreview company={company} address={address} customer={customer} invoiceNumber="PREVIEW" invoiceDate={invoiceDate} dueDate={dueDate} terms={terms} lines={calc.lines} subtotal={calc.subtotal} discount={calc.discount} tax={calc.tax} total={calc.total} cashPaid={cashPaid} cardPaid={cardPaid} paymentMade={paymentMade} balanceDue={Math.max(0,calc.total-paymentMade)} taxEnabled={taxEnabled} />
-      </div>
+      <details className="invoice-preview-toggle" open>
+        <summary>Show invoice preview</summary>
+        <div className="preview-wrap">
+          <InvoicePreview company={company} address={address} customer={customer} invoiceNumber="PREVIEW" invoiceDate={invoiceDate} dueDate={dueDate} terms={terms} lines={calc.lines} subtotal={calc.subtotal} discount={calc.discount} tax={calc.tax} total={calc.total} cashPaid={cashPaid} cardPaid={cardPaid} paymentMade={paymentMade} balanceDue={Math.max(0,calc.total-paymentMade)} taxEnabled={taxEnabled} />
+        </div>
+      </details>
     </div>
   </>;
 }
