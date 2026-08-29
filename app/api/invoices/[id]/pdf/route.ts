@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireApiAuth } from "@/lib/auth";
 import { getInvoice } from "@/lib/invoice";
-import { renderPdf } from "@/lib/pdf";
-import { invoiceHtml } from "@/lib/pdf-template";
+import { renderInvoicePdf } from "@/lib/pdf";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -13,8 +12,7 @@ export async function GET(_request:Request,{params}:{params:Promise<{id:string}>
   const invoice:any=await getInvoice(id);
   if(!invoice)return NextResponse.json({error:"Invoice not found"},{status:404});
   try {
-    const html=invoiceHtml(invoice);
-    const pdf=await renderPdf(html);
+    const pdf=await renderInvoicePdf(invoice);
     return new NextResponse(new Uint8Array(pdf),{
       status:200,
       headers:{

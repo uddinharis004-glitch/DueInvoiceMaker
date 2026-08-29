@@ -14,13 +14,13 @@
     "db:init": "psql \"$DATABASE_URL\" -f prisma/schema.sql"
   },
   "dependencies": {
-    "@sparticuz/chromium": "149.0.0",
+    "@types/pdfkit": "^0.17.6",
     "bcryptjs": "3.0.3",
     "googleapis": "176.0.0",
     "jose": "6.2.10",
     "next": "16.1.7",
+    "pdfkit": "^0.20.1",
     "pg": "8.23.0",
-    "playwright-core": "1.62.1",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },

@@ -1,59 +1,122 @@
-import { chromium as playwright } from "playwright-core";
-import chromium from "@sparticuz/chromium";
-import { randomUUID } from "node:crypto";
-import { rm } from "node:fs/promises";
+import PDFDocument from "pdfkit";
+import { formatInvoiceDate, money } from "@/lib/utils";
 
-let cachedExecutablePath: string | undefined;
+const LEFT = 46;
+const RIGHT = 566;
 
-chromium.setGraphicsMode = false;
-
-async function getExecutablePath() {
-  if (process.env.CHROME_EXECUTABLE_PATH) {
-    return process.env.CHROME_EXECUTABLE_PATH;
-  }
-
-  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_VERSION) {
-    cachedExecutablePath ??= await chromium.executablePath();
-    return cachedExecutablePath;
-  }
-
-  return undefined;
+function text(value: unknown) {
+  return String(value ?? "");
 }
 
-export async function renderPdf(html: string) {
-  const executablePath = await getExecutablePath();
-  const userDataDir = `/tmp/pw-${randomUUID()}`;
+function number(value: unknown) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
 
-  const browser = await playwright.launch({
-    executablePath,
-    headless: true,
-    args: executablePath ? chromium.args : [],
-    chromiumSandbox: false,
+function addLogo(doc: PDFKit.PDFDocument, logoData: unknown) {
+  if (typeof logoData !== "string" || !logoData.startsWith("data:image/")) return false;
+  try {
+    const encoded = logoData.split(",", 2)[1];
+    if (!encoded) return false;
+    doc.image(Buffer.from(encoded, "base64"), LEFT, 42, { fit: [175, 62], valign: "center" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function tableHeader(doc: PDFKit.PDFDocument, y: number) {
+  doc.rect(LEFT, y, RIGHT - LEFT, 25).fill("#3f3f3f");
+  doc.fillColor("white").font("Helvetica-Bold").fontSize(9);
+  doc.text("#", LEFT + 8, y + 8, { width: 24 });
+  doc.text("Description", LEFT + 38, y + 8, { width: 260 });
+  doc.text("Qty", 360, y + 8, { width: 45, align: "right" });
+  doc.text("Rate", 415, y + 8, { width: 60, align: "right" });
+  doc.text("Amount", 485, y + 8, { width: 73, align: "right" });
+  return y + 25;
+}
+
+function totalRow(doc: PDFKit.PDFDocument, label: string, value: unknown, y: number, options: { bold?: boolean; fill?: string; color?: string } = {}) {
+  if (options.fill) doc.rect(355, y, 211, 23).fill(options.fill);
+  doc.fillColor(options.color ?? "#1f1f1f").font(options.bold ? "Helvetica-Bold" : "Helvetica").fontSize(9);
+  doc.text(label, 365, y + 7, { width: 115 });
+  doc.text(money(value), 485, y + 7, { width: 71, align: "right" });
+  return y + 23;
+}
+
+export async function renderInvoicePdf(invoice: any) {
+  const doc = new PDFDocument({ size: "LETTER", margin: 0, compress: true, info: { Title: text(invoice.invoice_number), Author: text(invoice.company_snapshot?.name) } });
+  const chunks: Buffer[] = [];
+  const completed = new Promise<Buffer>((resolve, reject) => {
+    doc.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+    doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
   });
 
-  try {
-    const context = await browser.newContext({
-      viewport: { width: 816, height: 1056 },
-      deviceScaleFactor: 1,
-    });
-    const page = await context.newPage();
+  const company = invoice.company_snapshot ?? {};
+  const address = invoice.address_snapshot ?? {};
+  const customer = invoice.customer_snapshot ?? {};
+  const lines = Array.isArray(invoice.items) ? invoice.items : [];
+  const hasLogo = addLogo(doc, company.logo_data);
+  let companyY = hasLogo ? 112 : 48;
 
-    await page.setContent(html, { waitUntil: "load", timeout: 30000 });
-    await page.emulateMedia({ media: "print" });
+  doc.fillColor("#1f1f1f").font("Helvetica-Bold").fontSize(15).text(text(company.name), LEFT, companyY, { width: 260 });
+  companyY = doc.y + 3;
+  doc.font("Helvetica").fontSize(9);
+  [address.street, [address.city, address.state, address.zip].filter(Boolean).join(" "), address.phone || company.phone, company.email, company.website]
+    .filter(Boolean)
+    .forEach((line) => { doc.text(text(line), LEFT, companyY, { width: 270 }); companyY = doc.y + 1; });
 
-    return await page.pdf({
-      format: "Letter",
-      printBackground: true,
-      preferCSSPageSize: true,
-      margin: {
-        top: "0",
-        right: "0",
-        bottom: "0",
-        left: "0",
-      },
-    });
-  } finally {
-    await browser.close().catch(() => undefined);
-    await rm(userDataDir, { recursive: true, force: true }).catch(() => undefined);
+  doc.font("Helvetica").fontSize(28).text("INVOICE", 345, 45, { width: 220, align: "right" });
+  doc.font("Helvetica-Bold").fontSize(11).text(text(invoice.invoice_number), 345, 80, { width: 220, align: "right" });
+  doc.fontSize(9).text("Balance Due", 345, 112, { width: 220, align: "right" });
+  doc.fontSize(16).text(money(invoice.balance_due), 345, 126, { width: 220, align: "right" });
+  doc.font("Helvetica").fontSize(9);
+  doc.text(`Invoice Date:  ${formatInvoiceDate(invoice.invoice_date)}`, 385, 162, { width: 180, align: "right" });
+  doc.text(`Due Date:  ${invoice.due_date ? formatInvoiceDate(invoice.due_date) : formatInvoiceDate(invoice.invoice_date)}`, 385, 178, { width: 180, align: "right" });
+
+  const customerAddress = [customer.street, [customer.city, customer.state, customer.zip].filter(Boolean).join(" "), customer.phone].filter(Boolean);
+  doc.font("Helvetica-Bold").fontSize(10).text(text(customer.name), LEFT, 205, { width: 300 });
+  let customerY = doc.y + 2;
+  doc.font("Helvetica").fontSize(9);
+  if (customer.company_name) { doc.text(text(customer.company_name), LEFT, customerY, { width: 300 }); customerY = doc.y + 1; }
+  customerAddress.forEach((line) => { doc.text(text(line), LEFT, customerY, { width: 300 }); customerY = doc.y + 1; });
+
+  let y = tableHeader(doc, Math.max(275, customerY + 18));
+  lines.forEach((line: any, index: number) => {
+    const description = [text(line.name), text(line.description)].filter(Boolean).join("\n");
+    const rowHeight = Math.max(30, doc.heightOfString(description, { width: 255 }) + 12);
+    if (y + rowHeight > 650) { doc.addPage(); y = tableHeader(doc, 46); }
+    doc.fillColor("#1f1f1f").font("Helvetica").fontSize(9);
+    doc.text(String(index + 1), LEFT + 8, y + 7, { width: 24 });
+    doc.font("Helvetica-Bold").text(text(line.name), LEFT + 38, y + 7, { width: 255 });
+    if (line.description) doc.font("Helvetica").fillColor("#666666").fontSize(8).text(text(line.description), LEFT + 38, doc.y + 2, { width: 255 });
+    doc.fillColor("#1f1f1f").font("Helvetica").fontSize(9);
+    doc.text(number(line.qty).toFixed(2), 360, y + 7, { width: 45, align: "right" });
+    doc.text(money(line.rate), 415, y + 7, { width: 60, align: "right" });
+    doc.text(money(line.amount ?? line.net), 485, y + 7, { width: 73, align: "right" });
+    y += rowHeight;
+    doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor("#dddddd").lineWidth(0.5).stroke();
+  });
+
+  if (y > 590) { doc.addPage(); y = 46; }
+  y += 10;
+  y = totalRow(doc, "Sub Total", invoice.subtotal, y);
+  if (number(invoice.discount) > 0) y = totalRow(doc, "Discount (-)", invoice.discount, y);
+  if (invoice.tax_enabled && number(invoice.tax) > 0) y = totalRow(doc, "Tax", invoice.tax, y);
+  y = totalRow(doc, "Total", invoice.total, y, { bold: true });
+  if (number(invoice.cash_paid) > 0) y = totalRow(doc, "Cash Payment (-)", invoice.cash_paid, y, { color: "#d64545" });
+  if (number(invoice.card_paid) > 0) y = totalRow(doc, "Card Payment (-)", invoice.card_paid, y, { color: "#d64545" });
+  if (number(invoice.payment_made) > 0 && number(invoice.cash_paid) <= 0 && number(invoice.card_paid) <= 0) y = totalRow(doc, "Payment Made (-)", invoice.payment_made, y, { color: "#d64545" });
+  y = totalRow(doc, "Balance Due", invoice.balance_due, y, { bold: true, fill: "#f1f1ef" });
+
+  const footerY = Math.min(710, Math.max(y + 28, 625));
+  doc.fillColor("#1f1f1f").font("Helvetica").fontSize(9).text("Thanks for your business.", LEFT, footerY);
+  if (invoice.terms) {
+    doc.font("Helvetica-Bold").fontSize(9).text("Terms & Conditions", LEFT, footerY + 28);
+    doc.font("Helvetica").fontSize(8).text(text(invoice.terms), LEFT, footerY + 42, { width: RIGHT - LEFT, height: 68, ellipsis: true });
   }
+
+  doc.end();
+  return completed;
 }

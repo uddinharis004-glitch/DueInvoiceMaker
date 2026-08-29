@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireApiAuth } from "@/lib/auth";
 import { getInvoice } from "@/lib/invoice";
-import { renderPdf } from "@/lib/pdf";
-import { invoiceHtml } from "@/lib/pdf-template";
+import { renderInvoicePdf } from "@/lib/pdf";
 import { uploadPdfToDrive } from "@/lib/drive";
 import { query } from "@/lib/db";
 
@@ -16,7 +15,7 @@ export async function POST(_request:Request,{params}:{params:Promise<{id:string}
   if(!invoice)return NextResponse.json({error:"Invoice not found"},{status:404});
 
   try {
-    const pdf=await renderPdf(invoiceHtml(invoice));
+    const pdf=await renderInvoicePdf(invoice);
     const fileName=`${invoice.invoice_number} - ${invoice.customer_snapshot?.name ?? "Invoice"}.pdf`;
     const file=await uploadPdfToDrive(pdf,fileName);
 
