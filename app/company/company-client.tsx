@@ -66,11 +66,13 @@ export default function CompanyClient() {
       canvas.height = Math.max(1, Math.round(bitmap.height * scale));
       const context = canvas.getContext("2d");
       if (!context) throw new Error("Image conversion is unavailable.");
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, canvas.width, canvas.height);
       context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
       bitmap.close();
-      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/png"));
+      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/jpeg", 0.92));
       if (!blob) throw new Error("Image conversion failed.");
-      upload = new File([blob], "company-logo.png", {type:"image/png"});
+      upload = new File([blob], "company-logo.jpg", {type:"image/jpeg"});
     } catch {
       return alert("Logo conversion failed. Please choose a PNG or JPEG image.");
     }
@@ -114,7 +116,7 @@ export default function CompanyClient() {
           {form.logo_data ? <img src={form.logo_data} alt="Company logo" style={{maxWidth:220,maxHeight:100,objectFit:"contain",border:"1px solid #eee",padding:10}} /> : <p className="muted">No logo uploaded.</p>}
           <div style={{marginTop:16}}>
             <input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>uploadLogo(e.target.files?.[0])} />
-            <p className="muted">PNG, JPG or WebP. Saved as a PDF-compatible PNG. Maximum 2 MB.</p>
+            <p className="muted">PNG, JPG or WebP. Saved in a PDF-compatible format. Maximum 2 MB.</p>
           </div>
         </div>
       </div>
