@@ -57,7 +57,25 @@ export default function CompanyClient() {
   async function uploadLogo(file?: File) {
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) return alert("Logo must be 2 MB or smaller.");
-    const fd = new FormData(); fd.append("file", file);
+    let upload = file;
+    try {
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, 1200 / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Image conversion is unavailable.");
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      bitmap.close();
+      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/png"));
+      if (!blob) throw new Error("Image conversion failed.");
+      upload = new File([blob], "company-logo.png", {type:"image/png"});
+    } catch {
+      return alert("Logo conversion failed. Please choose a PNG or JPEG image.");
+    }
+    if (upload.size > 2 * 1024 * 1024) return alert("Converted logo must be 2 MB or smaller.");
+    const fd = new FormData(); fd.append("file", upload);
     const res = await fetch("/api/company/logo", { method: "POST", body: fd });
     if (!res.ok) return alert("Logo upload failed.");
     await load();
@@ -96,7 +114,7 @@ export default function CompanyClient() {
           {form.logo_data ? <img src={form.logo_data} alt="Company logo" style={{maxWidth:220,maxHeight:100,objectFit:"contain",border:"1px solid #eee",padding:10}} /> : <p className="muted">No logo uploaded.</p>}
           <div style={{marginTop:16}}>
             <input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>uploadLogo(e.target.files?.[0])} />
-            <p className="muted">PNG, JPG or WebP. Maximum 2 MB.</p>
+            <p className="muted">PNG, JPG or WebP. Saved as a PDF-compatible PNG. Maximum 2 MB.</p>
           </div>
         </div>
       </div>

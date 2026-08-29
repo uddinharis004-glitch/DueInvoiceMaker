@@ -1,5 +1,4 @@
 import PDFDocument from "pdfkit";
-import sharp from "sharp";
 import { formatInvoiceDate, money } from "./utils";
 
 const LEFT = 46;
@@ -14,15 +13,12 @@ function number(value: unknown) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-async function addLogo(doc: PDFKit.PDFDocument, logoData: unknown) {
+function addLogo(doc: PDFKit.PDFDocument, logoData: unknown) {
   if (typeof logoData !== "string" || !logoData.startsWith("data:image/")) return false;
   try {
     const encoded = logoData.split(",", 2)[1];
     if (!encoded) return false;
-    // PDFKit reads PNG and JPEG reliably. Normalize uploaded PNG, JPEG, and WebP
-    // logos to PNG so the PDF uses the same logo as the browser preview.
-    const logo = await sharp(Buffer.from(encoded, "base64")).png().toBuffer();
-    doc.image(logo, LEFT, 42, { fit: [175, 62], valign: "center" });
+    doc.image(Buffer.from(encoded, "base64"), LEFT, 42, { fit: [175, 62], valign: "center" });
     return true;
   } catch (error) {
     console.warn("Invoice logo could not be rendered in the PDF", error);
@@ -62,7 +58,7 @@ export async function renderInvoicePdf(invoice: any) {
   const address = invoice.address_snapshot ?? {};
   const customer = invoice.customer_snapshot ?? {};
   const lines = Array.isArray(invoice.items) ? invoice.items : [];
-  const hasLogo = await addLogo(doc, company.logo_data);
+  const hasLogo = addLogo(doc, company.logo_data);
   let companyY = hasLogo ? 112 : 48;
 
   doc.fillColor("#1f1f1f").font("Helvetica-Bold").fontSize(15).text(text(company.name), LEFT, companyY, { width: 260 });
