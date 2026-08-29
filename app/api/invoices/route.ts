@@ -62,3 +62,12 @@ export async function GET(request:Request){
   const {rows}=await query("SELECT * FROM invoices ORDER BY created_at DESC");
   return NextResponse.json({invoices:rows});
 }
+
+export async function DELETE(request:Request){
+  if(!(await requireApiAuth()))return NextResponse.json({error:"Unauthorized"},{status:401});
+  const id=new URL(request.url).searchParams.get("id");
+  if(!id)return NextResponse.json({error:"Missing invoice id"},{status:400});
+  const {rows}=await query("DELETE FROM invoices WHERE id=$1 RETURNING invoice_number",[id]);
+  if(!rows[0])return NextResponse.json({error:"Invoice not found"},{status:404});
+  return NextResponse.json({ok:true,invoiceNumber:rows[0].invoice_number});
+}
