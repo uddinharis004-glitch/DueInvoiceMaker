@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireApiAuth } from "@/lib/auth";
-import { query } from "@/lib/db";
+import { transaction } from "@/lib/db";
 
 export async function POST(request: Request) {
   if (!(await requireApiAuth())) return NextResponse.json({error:"Unauthorized"},{status:401});
@@ -13,6 +13,13 @@ export async function POST(request: Request) {
   const buffer = Buffer.from(await file.arrayBuffer());
   const data = `data:${file.type};base64,${buffer.toString("base64")}`;
 
-  await query("UPDATE company SET logo_data=$1, updated_at=NOW() WHERE id=1", [data]);
+  await transaction(async (client) => {
+    await client.query("UPDATE company SET logo_data=$1, updated_at=NOW() WHERE id=1", [data]);
+    await client.query(
+      `UPDATE invoices
+       SET company_snapshot=jsonb_set(company_snapshot,'{logo_data}',to_jsonb($1::text),true),updated_at=NOW()`,
+      [data],
+    );
+  });
   return NextResponse.json({ok:true});
 }
