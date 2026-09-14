@@ -48,7 +48,8 @@ body{font-family:Arial,Helvetica,sans-serif;color:#1f1f1f}
 table{width:100%;border-collapse:collapse;font-size:10px}.thead{background:#3f3f3f;color:#fff}
 th{color:#fff;text-align:left;font-size:10px;font-weight:700;padding:8px 10px}td{padding:8px 10px;vertical-align:top}
 .num{text-align:right;white-space:nowrap}.item-name{font-weight:700}.item-desc{color:#777;margin-top:2px;line-height:1.45}
-.rule{border-top:1px solid #999;margin-top:8px}.totals{width:43%;margin-left:auto;font-size:10px}
+.table-totals td{border-top:1px solid #999;border-bottom:1px solid #ddd;font-weight:800;padding-top:9px;padding-bottom:9px}
+.totals{width:43%;margin-left:auto;font-size:10px}
 .total{display:flex;justify-content:space-between;padding:7px 10px}.strong{font-weight:800}.payment{color:#e25555}.due{background:#f1f1ef}
 .thanks{margin-top:65px;font-size:10px}.terms{margin-top:38px;font-size:9px;line-height:1.45}.terms h4{margin:0 0 6px;font-size:10px}
 </style></head><body><div class="page">
@@ -75,13 +76,10 @@ ${company.website?`<div class="company-line">${esc(company.website)}</div>`:""}
 </div>
 <div class="bill">${esc(customer.name)}${customer.company_name?`<br><span style="font-weight:400">${esc(customer.company_name)}</span>`:""}${billAddress?`<br><span style="font-weight:400">${billAddress}</span>`:""}</div>
 <table><thead class="thead"><tr><th style="width:6%">#</th><th style="width:42%">Description</th><th style="width:10%">Qty</th><th style="width:14%">Rate</th><th style="width:14%">Discount</th><th style="width:14%">Amount</th></tr></thead>
-<tbody>${rows}</tbody></table>
-<div class="rule"></div>
+<tbody>${rows}</tbody>
+<tfoot><tr class="table-totals"><td></td><td></td><td></td><td class="num">${money(invoice.subtotal)}</td><td class="num">${Number(invoice.discount)>0?money(invoice.discount):"-"}</td><td class="num">${money(invoice.total)}</td></tr></tfoot></table>
 <div class="totals">
-<div class="total"><span>Subtotal before discount</span><span>${money(invoice.subtotal)}</span></div>
-${Number(invoice.discount)>0?`<div class="total"><span>Discount (-)</span><span>${money(invoice.discount)}</span></div>`:""}
 ${taxEnabled&&Number(invoice.tax)>0?`<div class="total"><span>Tax</span><span>${money(invoice.tax)}</span></div>`:""}
-<div class="total strong"><span>Total</span><span>${money(invoice.total)}</span></div>
 ${Number(invoice.cash_paid)>0?`<div class="total payment"><span>Cash Payment (-)</span><span>${money(invoice.cash_paid)}</span></div>`:""}
 ${Number(invoice.card_paid)>0?`<div class="total payment"><span>Card Payment (-)</span><span>${money(invoice.card_paid)}</span></div>`:""}
 ${Number(invoice.payment_made)>0&&Number(invoice.cash_paid)<=0&&Number(invoice.card_paid)<=0?`<div class="total payment"><span>Payment Made (-)</span><span>${money(invoice.payment_made)}</span></div>`:""}

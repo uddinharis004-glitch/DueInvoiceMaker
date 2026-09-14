@@ -49,14 +49,20 @@ export default function InvoicePreview(props:any){
           <td className="num">{money(l.amount ?? l.net)}</td>
         </tr>)}
       </tbody>
+      <tfoot>
+        <tr>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td className="num">{money(subtotal)}</td>
+          <td className="num">{discount>0?money(discount):"-"}</td>
+          <td className="num">{money(total)}</td>
+        </tr>
+      </tfoot>
     </table>
 
-    <div className="invoice-rule" />
     <div className="totals">
-      <div className="total-row"><span>Subtotal before discount</span><span>{money(subtotal)}</span></div>
-      {discount>0&&<div className="total-row"><span>Discount (-)</span><span>{money(discount)}</span></div>}
       {taxEnabled&&tax>0&&<div className="total-row"><span>Tax</span><span>{money(tax)}</span></div>}
-      <div className="total-row strong"><span>Total</span><span>{money(total)}</span></div>
       {cashPaid>0&&<div className="total-row payment"><span>Cash Payment (-)</span><span>{money(cashPaid)}</span></div>}
       {cardPaid>0&&<div className="total-row payment"><span>Card Payment (-)</span><span>{money(cardPaid)}</span></div>}
       {paymentMade>0&&cashPaid<=0&&cardPaid<=0&&<div className="total-row payment"><span>Payment Made (-)</span><span>{money(paymentMade)}</span></div>}

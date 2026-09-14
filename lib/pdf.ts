@@ -102,12 +102,18 @@ export async function renderInvoicePdf(invoice: any) {
     doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor("#dddddd").lineWidth(0.5).stroke();
   });
 
+  if (y + 28 > 650) { doc.addPage(); y = tableHeader(doc, 46); }
+  doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor("#999999").lineWidth(0.75).stroke();
+  doc.fillColor("#1f1f1f").font("Helvetica-Bold").fontSize(9);
+  doc.text(money(invoice.subtotal), 355, y + 9, { width: 58, align: "right" });
+  doc.text(number(invoice.discount) > 0 ? money(invoice.discount) : "-", 423, y + 9, { width: 60, align: "right" });
+  doc.text(money(invoice.total), 493, y + 9, { width: 65, align: "right" });
+  y += 28;
+  doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor("#dddddd").lineWidth(0.5).stroke();
+
   if (y > 590) { doc.addPage(); y = 46; }
   y += 10;
-  y = totalRow(doc, "Subtotal before discount", invoice.subtotal, y);
-  if (number(invoice.discount) > 0) y = totalRow(doc, "Discount (-)", invoice.discount, y);
   if (invoice.tax_enabled && number(invoice.tax) > 0) y = totalRow(doc, "Tax", invoice.tax, y);
-  y = totalRow(doc, "Total", invoice.total, y, { bold: true });
   if (number(invoice.cash_paid) > 0) y = totalRow(doc, "Cash Payment (-)", invoice.cash_paid, y, { color: "#d64545" });
   if (number(invoice.card_paid) > 0) y = totalRow(doc, "Card Payment (-)", invoice.card_paid, y, { color: "#d64545" });
   if (number(invoice.payment_made) > 0 && number(invoice.cash_paid) <= 0 && number(invoice.card_paid) <= 0) y = totalRow(doc, "Payment Made (-)", invoice.payment_made, y, { color: "#d64545" });
