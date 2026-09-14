@@ -1,5 +1,12 @@
 import { money, formatInvoiceDate } from "@/lib/utils";
 
+function lineDiscount(line:any){
+  const amount=Number(line.discountAmount??0);
+  if(!Number.isFinite(amount)||amount<=0)return null;
+  const percent=line.discountType==="percent"?`${Number(line.discountValue)||0}% · `:"";
+  return `Discount: ${percent}${money(amount)}`;
+}
+
 export default function InvoicePreview(props:any){
   const {company,address,customer,invoiceNumber,invoiceDate,dueDate,terms,lines,subtotal,discount,tax,total,cashPaid=0,cardPaid=0,paymentMade,balanceDue,taxEnabled}=props;
   return <div className="invoice-page">
@@ -42,7 +49,11 @@ export default function InvoicePreview(props:any){
       <tbody>
         {lines.map((l:any,i:number)=><tr key={l.id??i}>
           <td>{i+1}</td>
-          <td><div className="item-name">{l.name}</div><div className="item-desc">{l.description}</div></td>
+          <td>
+            <div className="item-name">{l.name}</div>
+            <div className="item-desc">{l.description}</div>
+            {lineDiscount(l)&&<div className="item-discount">{lineDiscount(l)}</div>}
+          </td>
           <td className="num">{Number(l.qty).toFixed(2)}</td>
           <td className="num">{money(l.rate)}</td>
           <td className="num">{money(l.amount ?? l.net)}</td>
@@ -52,7 +63,7 @@ export default function InvoicePreview(props:any){
 
     <div className="invoice-rule" />
     <div className="totals">
-      <div className="total-row"><span>Sub Total</span><span>{money(subtotal)}</span></div>
+      <div className="total-row"><span>Subtotal before discount</span><span>{money(subtotal)}</span></div>
       {discount>0&&<div className="total-row"><span>Discount (-)</span><span>{money(discount)}</span></div>}
       {taxEnabled&&tax>0&&<div className="total-row"><span>Tax</span><span>{money(tax)}</span></div>}
       <div className="total-row strong"><span>Total</span><span>{money(total)}</span></div>

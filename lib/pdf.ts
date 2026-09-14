@@ -13,6 +13,13 @@ function number(value: unknown) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function lineDiscount(line: any) {
+  const amount = number(line.discountAmount);
+  if (amount <= 0) return "";
+  const percent = line.discountType === "percent" ? `${number(line.discountValue)}% · ` : "";
+  return `Discount: ${percent}${money(amount)}`;
+}
+
 function addLogo(doc: PDFKit.PDFDocument, logoData: unknown) {
   if (typeof logoData !== "string" || !logoData.startsWith("data:image/")) return false;
   try {
@@ -86,12 +93,15 @@ export async function renderInvoicePdf(invoice: any) {
   let y = tableHeader(doc, Math.max(275, customerY + 18));
   lines.forEach((line: any, index: number) => {
     const description = [text(line.name), text(line.description)].filter(Boolean).join("\n");
-    const rowHeight = Math.max(30, doc.heightOfString(description, { width: 255 }) + 12);
+    const discountText = lineDiscount(line);
+    const rowText = [description, discountText].filter(Boolean).join("\n");
+    const rowHeight = Math.max(30, doc.heightOfString(rowText, { width: 255 }) + 12);
     if (y + rowHeight > 650) { doc.addPage(); y = tableHeader(doc, 46); }
     doc.fillColor("#1f1f1f").font("Helvetica").fontSize(9);
     doc.text(String(index + 1), LEFT + 8, y + 7, { width: 24 });
     doc.font("Helvetica-Bold").text(text(line.name), LEFT + 38, y + 7, { width: 255 });
     if (line.description) doc.font("Helvetica").fillColor("#666666").fontSize(8).text(text(line.description), LEFT + 38, doc.y + 2, { width: 255 });
+    if (discountText) doc.font("Helvetica-Bold").fillColor("#d64545").fontSize(8).text(discountText, LEFT + 38, doc.y + 2, { width: 255 });
     doc.fillColor("#1f1f1f").font("Helvetica").fontSize(9);
     doc.text(number(line.qty).toFixed(2), 360, y + 7, { width: 45, align: "right" });
     doc.text(money(line.rate), 415, y + 7, { width: 60, align: "right" });
@@ -102,7 +112,7 @@ export async function renderInvoicePdf(invoice: any) {
 
   if (y > 590) { doc.addPage(); y = 46; }
   y += 10;
-  y = totalRow(doc, "Sub Total", invoice.subtotal, y);
+  y = totalRow(doc, "Subtotal before discount", invoice.subtotal, y);
   if (number(invoice.discount) > 0) y = totalRow(doc, "Discount (-)", invoice.discount, y);
   if (invoice.tax_enabled && number(invoice.tax) > 0) y = totalRow(doc, "Tax", invoice.tax, y);
   y = totalRow(doc, "Total", invoice.total, y, { bold: true });
