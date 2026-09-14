@@ -1,27 +1,48 @@
-# Private Invoice Maker
+# Due Invoice Maker
 
-A single-user invoice application built for a private company:
+A private, single-user web application for creating, managing, printing, and downloading professional invoices.
 
-- Next.js + React
-- PostgreSQL
-- HTML/CSS invoice template
-- Playwright + Chromium PDF generation
-- Google Drive PDF archive
-- Single username/password login
-- US Letter (8.5 x 11) invoice format
-- Saved company profile, multiple addresses, customers, reusable items, tax rates, invoices and payment status
+## Current technology stack
+
+| Area | Technology | Purpose |
+| --- | --- | --- |
+| Web framework | Next.js 16 (App Router) | Pages, server components, and API routes |
+| User interface | React 19 | Interactive invoice, customer, item, and company screens |
+| Language | TypeScript 5.9 | Type-safe frontend and backend code |
+| Styling | Custom CSS | Responsive application and US Letter invoice layouts |
+| Server runtime | Node.js 22 | Authentication, database access, and PDF generation |
+| Database | PostgreSQL (Neon on Vercel) | Stores company details, customers, items, tax rates, and invoices |
+| Database driver | `pg` | PostgreSQL connection pooling, queries, and transactions |
+| Authentication | `jose` + `bcryptjs` | Signed JWT session cookies and password-hash verification |
+| PDF generation | PDFKit | Server-side downloadable US Letter invoice PDFs |
+| Optional archive | Google Drive API (`googleapis`) | Uploads generated PDFs when Google Drive is configured |
+| Source control | GitHub | Stores and tracks the application source code |
+| Hosting | Vercel | Builds and hosts the Next.js application |
+
+## Current features
+
+- Single username/password login with secure, HTTP-only session cookies
+- Company profile and logo
+- Multiple company addresses
+- Saved customers and reusable invoice items
+- Per-item fixed or percentage discounts
+- Optional tax rates and taxable items
+- Cash and card payment tracking
+- Paid, partially paid, and unpaid balances
+- Invoice history with deletion confirmation
+- Responsive desktop and mobile interface
+- Printable invoices and server-generated PDF downloads
+- Optional Google Drive PDF archiving
 
 The printed invoice is intentionally based on the supplied `rosa.pdf` reference: logo/company information on the upper-left, invoice information on the upper-right, customer/item section, totals/payment section, and Terms & Conditions at the bottom.
 
 ## 1. Requirements
 
-- Node.js 20.19+ recommended
-- PostgreSQL
-- Google Cloud project with Google Drive API enabled
-- A Google service account
-- A Google Drive folder shared with the service account
+- Node.js 22.17 or newer
+- A hosted PostgreSQL database (the current deployment uses Neon)
 - GitHub
 - Vercel
+- A Google Cloud project, service account, and Drive folder only if Google Drive archiving will be used
 
 ## 2. Install
 
@@ -63,7 +84,7 @@ npm run db:init
 
 If your shell does not support the command above, run the SQL in `prisma/schema.sql` using your database provider's SQL editor.
 
-## 5. Google Drive
+## 5. Google Drive (optional)
 
 1. Create a Google Cloud project.
 2. Enable Google Drive API.
@@ -74,7 +95,7 @@ If your shell does not support the command above, run the SQL in `prisma/schema.
 7. Put the service-account JSON in `GOOGLE_SERVICE_ACCOUNT_JSON`.
 8. Put the folder ID in `GOOGLE_DRIVE_FOLDER_ID`.
 
-The app uploads generated PDFs to that folder.
+When configured, the app can upload generated PDFs to that folder. PDF downloading works without Google Drive.
 
 ## 6. Run locally
 
@@ -88,17 +109,9 @@ http://localhost:3000
 
 ## 7. PDF engine
 
-Local development uses your installed Chrome/Chromium if `CHROME_EXECUTABLE_PATH` is set.
+The application uses PDFKit in the Node.js server runtime. It generates PDFs directly without Chrome, Chromium, Playwright, or a third-party conversion service.
 
-If it is not set, the app attempts to use the Playwright-installed Chromium path.
-
-Install a local Playwright browser if needed:
-
-```bash
-npx playwright install chromium
-```
-
-For Vercel/serverless, the app uses `@sparticuz/chromium` with `playwright-core`.
+PDF files are generated when requested and downloaded to the user's device. They are not permanently stored by Vercel. A copy is stored only when the optional Google Drive upload feature is used.
 
 ## 8. Deploy
 
