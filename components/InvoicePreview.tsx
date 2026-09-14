@@ -1,12 +1,5 @@
 import { money, formatInvoiceDate } from "@/lib/utils";
 
-function lineDiscount(line:any){
-  const amount=Number(line.discountAmount??0);
-  if(!Number.isFinite(amount)||amount<=0)return null;
-  const percent=line.discountType==="percent"?`${Number(line.discountValue)||0}% · `:"";
-  return `Discount: ${percent}${money(amount)}`;
-}
-
 export default function InvoicePreview(props:any){
   const {company,address,customer,invoiceNumber,invoiceDate,dueDate,terms,lines,subtotal,discount,tax,total,cashPaid=0,cardPaid=0,paymentMade,balanceDue,taxEnabled}=props;
   return <div className="invoice-page">
@@ -45,17 +38,14 @@ export default function InvoicePreview(props:any){
     </div>
 
     <table className="invoice-table">
-      <thead><tr><th style={{width:"6%"}}>#</th><th>Description</th><th style={{width:"12%"}}>Qty</th><th style={{width:"14%"}}>Rate</th><th style={{width:"16%"}}>Amount</th></tr></thead>
+      <thead><tr><th style={{width:"6%"}}>#</th><th style={{width:"42%"}}>Description</th><th style={{width:"10%"}}>Qty</th><th style={{width:"14%"}}>Rate</th><th style={{width:"14%"}}>Discount</th><th style={{width:"14%"}}>Amount</th></tr></thead>
       <tbody>
         {lines.map((l:any,i:number)=><tr key={l.id??i}>
           <td>{i+1}</td>
-          <td>
-            <div className="item-name">{l.name}</div>
-            <div className="item-desc">{l.description}</div>
-            {lineDiscount(l)&&<div className="item-discount">{lineDiscount(l)}</div>}
-          </td>
+          <td><div className="item-name">{l.name}</div><div className="item-desc">{l.description}</div></td>
           <td className="num">{Number(l.qty).toFixed(2)}</td>
           <td className="num">{money(l.rate)}</td>
+          <td className="num">{Number(l.discountAmount)>0?money(l.discountAmount):"-"}</td>
           <td className="num">{money(l.amount ?? l.net)}</td>
         </tr>)}
       </tbody>

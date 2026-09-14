@@ -114,7 +114,6 @@ th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: #
 .invoice-table .num { text-align: right; white-space: nowrap; }
 .item-name { font-weight: 700; }
 .item-desc { color: #777; margin-top: 2px; white-space: pre-line; line-height: 1.45; }
-.item-discount { color: #d64545; margin-top: 3px; font-size: 9px; font-weight: 600; }
 .invoice-rule { border-top: 1px solid #999; margin-top: 8px; }
 .totals { width: 43%; margin-left: auto; font-size: 10px; }
 .total-row { display: flex; justify-content: space-between; padding: 7px 10px; }

@@ -8,13 +8,6 @@ function esc(value: unknown) {
     .replaceAll('"',"&quot;");
 }
 
-function lineDiscount(line:any) {
-  const amount=Number(line.discountAmount??0);
-  if(!Number.isFinite(amount)||amount<=0)return "";
-  const percent=line.discountType==="percent"?`${Number(line.discountValue)||0}% · `:"";
-  return `Discount: ${percent}${money(amount)}`;
-}
-
 export function invoiceHtml(invoice:any) {
   const company=invoice.company_snapshot;
   const address=invoice.address_snapshot;
@@ -25,9 +18,10 @@ export function invoiceHtml(invoice:any) {
   const rows=lines.map((l:any,i:number)=>`
     <tr>
       <td>${i+1}</td>
-      <td><div class="item-name">${esc(l.name)}</div><div class="item-desc">${esc(l.description).replaceAll("\n","<br>")}</div>${lineDiscount(l)?`<div class="item-discount">${esc(lineDiscount(l))}</div>`:""}</td>
+      <td><div class="item-name">${esc(l.name)}</div><div class="item-desc">${esc(l.description).replaceAll("\n","<br>")}</div></td>
       <td class="num">${Number(l.qty).toFixed(2)}</td>
       <td class="num">${money(l.rate)}</td>
+      <td class="num">${Number(l.discountAmount)>0?money(l.discountAmount):"-"}</td>
       <td class="num">${money(l.amount ?? l.net)}</td>
     </tr>`).join("");
 
@@ -53,7 +47,7 @@ body{font-family:Arial,Helvetica,sans-serif;color:#1f1f1f}
 .bill{font-size:12px;font-weight:700;margin-bottom:16px;line-height:1.45}
 table{width:100%;border-collapse:collapse;font-size:10px}.thead{background:#3f3f3f;color:#fff}
 th{color:#fff;text-align:left;font-size:10px;font-weight:700;padding:8px 10px}td{padding:8px 10px;vertical-align:top}
-.num{text-align:right;white-space:nowrap}.item-name{font-weight:700}.item-desc{color:#777;margin-top:2px;line-height:1.45}.item-discount{color:#d64545;margin-top:3px;font-size:9px;font-weight:600}
+.num{text-align:right;white-space:nowrap}.item-name{font-weight:700}.item-desc{color:#777;margin-top:2px;line-height:1.45}
 .rule{border-top:1px solid #999;margin-top:8px}.totals{width:43%;margin-left:auto;font-size:10px}
 .total{display:flex;justify-content:space-between;padding:7px 10px}.strong{font-weight:800}.payment{color:#e25555}.due{background:#f1f1ef}
 .thanks{margin-top:65px;font-size:10px}.terms{margin-top:38px;font-size:9px;line-height:1.45}.terms h4{margin:0 0 6px;font-size:10px}
@@ -80,7 +74,7 @@ ${company.website?`<div class="company-line">${esc(company.website)}</div>`:""}
 </div>
 </div>
 <div class="bill">${esc(customer.name)}${customer.company_name?`<br><span style="font-weight:400">${esc(customer.company_name)}</span>`:""}${billAddress?`<br><span style="font-weight:400">${billAddress}</span>`:""}</div>
-<table><thead class="thead"><tr><th style="width:6%">#</th><th>Description</th><th style="width:12%">Qty</th><th style="width:14%">Rate</th><th style="width:16%">Amount</th></tr></thead>
+<table><thead class="thead"><tr><th style="width:6%">#</th><th style="width:42%">Description</th><th style="width:10%">Qty</th><th style="width:14%">Rate</th><th style="width:14%">Discount</th><th style="width:14%">Amount</th></tr></thead>
 <tbody>${rows}</tbody></table>
 <div class="rule"></div>
 <div class="totals">

@@ -13,13 +13,6 @@ function number(value: unknown) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function lineDiscount(line: any) {
-  const amount = number(line.discountAmount);
-  if (amount <= 0) return "";
-  const percent = line.discountType === "percent" ? `${number(line.discountValue)}% · ` : "";
-  return `Discount: ${percent}${money(amount)}`;
-}
-
 function addLogo(doc: PDFKit.PDFDocument, logoData: unknown) {
   if (typeof logoData !== "string" || !logoData.startsWith("data:image/")) return false;
   try {
@@ -37,10 +30,11 @@ function tableHeader(doc: PDFKit.PDFDocument, y: number) {
   doc.rect(LEFT, y, RIGHT - LEFT, 25).fill("#3f3f3f");
   doc.fillColor("white").font("Helvetica-Bold").fontSize(9);
   doc.text("#", LEFT + 8, y + 8, { width: 24 });
-  doc.text("Description", LEFT + 38, y + 8, { width: 260 });
-  doc.text("Qty", 360, y + 8, { width: 45, align: "right" });
-  doc.text("Rate", 415, y + 8, { width: 60, align: "right" });
-  doc.text("Amount", 485, y + 8, { width: 73, align: "right" });
+  doc.text("Description", LEFT + 38, y + 8, { width: 210 });
+  doc.text("Qty", 305, y + 8, { width: 40, align: "right" });
+  doc.text("Rate", 355, y + 8, { width: 58, align: "right" });
+  doc.text("Discount", 423, y + 8, { width: 60, align: "right" });
+  doc.text("Amount", 493, y + 8, { width: 65, align: "right" });
   return y + 25;
 }
 
@@ -93,19 +87,17 @@ export async function renderInvoicePdf(invoice: any) {
   let y = tableHeader(doc, Math.max(275, customerY + 18));
   lines.forEach((line: any, index: number) => {
     const description = [text(line.name), text(line.description)].filter(Boolean).join("\n");
-    const discountText = lineDiscount(line);
-    const rowText = [description, discountText].filter(Boolean).join("\n");
-    const rowHeight = Math.max(30, doc.heightOfString(rowText, { width: 255 }) + 12);
+    const rowHeight = Math.max(30, doc.heightOfString(description, { width: 210 }) + 12);
     if (y + rowHeight > 650) { doc.addPage(); y = tableHeader(doc, 46); }
     doc.fillColor("#1f1f1f").font("Helvetica").fontSize(9);
     doc.text(String(index + 1), LEFT + 8, y + 7, { width: 24 });
-    doc.font("Helvetica-Bold").text(text(line.name), LEFT + 38, y + 7, { width: 255 });
-    if (line.description) doc.font("Helvetica").fillColor("#666666").fontSize(8).text(text(line.description), LEFT + 38, doc.y + 2, { width: 255 });
-    if (discountText) doc.font("Helvetica-Bold").fillColor("#d64545").fontSize(8).text(discountText, LEFT + 38, doc.y + 2, { width: 255 });
+    doc.font("Helvetica-Bold").text(text(line.name), LEFT + 38, y + 7, { width: 210 });
+    if (line.description) doc.font("Helvetica").fillColor("#666666").fontSize(8).text(text(line.description), LEFT + 38, doc.y + 2, { width: 210 });
     doc.fillColor("#1f1f1f").font("Helvetica").fontSize(9);
-    doc.text(number(line.qty).toFixed(2), 360, y + 7, { width: 45, align: "right" });
-    doc.text(money(line.rate), 415, y + 7, { width: 60, align: "right" });
-    doc.text(money(line.amount ?? line.net), 485, y + 7, { width: 73, align: "right" });
+    doc.text(number(line.qty).toFixed(2), 305, y + 7, { width: 40, align: "right" });
+    doc.text(money(line.rate), 355, y + 7, { width: 58, align: "right" });
+    doc.text(number(line.discountAmount) > 0 ? money(line.discountAmount) : "-", 423, y + 7, { width: 60, align: "right" });
+    doc.text(money(line.amount ?? line.net), 493, y + 7, { width: 65, align: "right" });
     y += rowHeight;
     doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor("#dddddd").lineWidth(0.5).stroke();
   });
