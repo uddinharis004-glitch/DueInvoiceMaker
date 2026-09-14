@@ -75,7 +75,7 @@ ${company.website?`<div class="company-line">${esc(company.website)}</div>`:""}
 </div>
 </div>
 <div class="bill">${esc(customer.name)}${customer.company_name?`<br><span style="font-weight:400">${esc(customer.company_name)}</span>`:""}${billAddress?`<br><span style="font-weight:400">${billAddress}</span>`:""}</div>
-<table><thead class="thead"><tr><th style="width:6%">#</th><th style="width:42%">Description</th><th style="width:10%">Qty</th><th style="width:14%">Rate</th><th style="width:14%">Discount</th><th style="width:14%">Amount</th></tr></thead>
+<table><thead class="thead"><tr><th style="width:6%">#</th><th style="width:42%">Description</th><th class="num" style="width:10%">Qty</th><th class="num" style="width:14%">Rate</th><th class="num" style="width:14%">Discount</th><th class="num" style="width:14%">Amount</th></tr></thead>
 <tbody>${rows}</tbody>
 <tfoot><tr class="table-totals"><td></td><td></td><td></td><td class="num">${money(invoice.subtotal)}</td><td class="num">${Number(invoice.discount)>0?money(invoice.discount):"-"}</td><td class="num">${money(invoice.total)}</td></tr></tfoot></table>
 <div class="totals">

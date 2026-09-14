@@ -38,7 +38,7 @@ export default function InvoicePreview(props:any){
     </div>
 
     <table className="invoice-table">
-      <thead><tr><th style={{width:"6%"}}>#</th><th style={{width:"42%"}}>Description</th><th style={{width:"10%"}}>Qty</th><th style={{width:"14%"}}>Rate</th><th style={{width:"14%"}}>Discount</th><th style={{width:"14%"}}>Amount</th></tr></thead>
+      <thead><tr><th style={{width:"6%"}}>#</th><th style={{width:"42%"}}>Description</th><th className="num" style={{width:"10%"}}>Qty</th><th className="num" style={{width:"14%"}}>Rate</th><th className="num" style={{width:"14%"}}>Discount</th><th className="num" style={{width:"14%"}}>Amount</th></tr></thead>
       <tbody>
         {lines.map((l:any,i:number)=><tr key={l.id??i}>
           <td>{i+1}</td>
