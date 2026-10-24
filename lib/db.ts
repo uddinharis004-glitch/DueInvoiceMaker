@@ -1,4 +1,6 @@
+import { randomUUID } from "node:crypto";
 import { Pool, type QueryResultRow } from "pg";
+import { DataType, newDb } from "pg-mem";
 import { DATABASE_SCHEMA } from "@/lib/schema";
 
 declare global {
@@ -8,22 +10,42 @@ declare global {
 }
 
 const databaseUrl = process.env.DATABASE_URL;
+const useLocalPreviewDatabase = process.env.LOCAL_PREVIEW_DATABASE === "true";
 
-if (!databaseUrl) {
+if (!databaseUrl && !useLocalPreviewDatabase) {
   throw new Error("DATABASE_URL is not configured. Connect a PostgreSQL database in Vercel and redeploy.");
 }
 
-const pool =
-  global.__invoicePool ??
-  new Pool({
+function createPool() {
+  if (useLocalPreviewDatabase) {
+    const database = newDb();
+    database.registerExtension("pgcrypto", (schema) => {
+      schema.registerFunction({
+        name: "gen_random_uuid",
+        returns: DataType.uuid,
+        implementation: randomUUID,
+        impure: true,
+      });
+    });
+
+    const adapter = database.adapters.createPg();
+    return new adapter.Pool() as unknown as Pool;
+  }
+
+  return new Pool({
     connectionString: databaseUrl,
     max: 3,
     idleTimeoutMillis: 10000,
     connectionTimeoutMillis: 10000,
-    ssl: databaseUrl.includes("localhost") || databaseUrl.includes("127.0.0.1")
+    ssl: databaseUrl!.includes("localhost") || databaseUrl!.includes("127.0.0.1")
       ? false
       : { rejectUnauthorized: false },
   });
+}
+
+const pool =
+  global.__invoicePool ??
+  createPool();
 
 if (process.env.NODE_ENV !== "production") global.__invoicePool = pool;
 

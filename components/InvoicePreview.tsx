@@ -7,8 +7,8 @@ export default function InvoicePreview(props:any){
       <div className="invoice-company">
         {company?.logo_data&&<img className="invoice-logo" src={company.logo_data} alt="Company logo"/>}
         <div className="invoice-company-name">{company?.name}</div>
-        <div className="invoice-company-line">{address?.street}</div>
-        <div className="invoice-company-line">{address?.city}, {address?.state} {address?.zip}</div>
+        {address?.street&&<div className="invoice-company-line">{address.street}</div>}
+        {(address?.city||address?.state||address?.zip)&&<div className="invoice-company-line">{address?.city}{address?.city&&address?.state?", ":""}{address?.state} {address?.zip}</div>}
         {(address?.phone||company?.phone)&&<div className="invoice-company-line">{address?.phone||company?.phone}</div>}
         {company?.email&&<div className="invoice-company-line">{company.email}</div>}
         {company?.website&&<div className="invoice-company-line">{company.website}</div>}
@@ -40,7 +40,7 @@ export default function InvoicePreview(props:any){
     <table className="invoice-table">
       <thead><tr><th style={{width:"6%"}}>#</th><th style={{width:"42%"}}>Description</th><th className="num" style={{width:"10%"}}>Qty</th><th className="num" style={{width:"14%"}}>Rate</th><th className="num" style={{width:"14%"}}>Discount</th><th className="num" style={{width:"14%"}}>Amount</th></tr></thead>
       <tbody>
-        {lines.map((l:any,i:number)=><tr key={l.id??i}>
+        {lines.map((l:any,i:number)=><tr key={l.id}>
           <td>{i+1}</td>
           <td><div className="item-name">{l.name}</div><div className="item-desc">{l.description}</div></td>
           <td className="num">{Number(l.qty).toFixed(2)}</td>

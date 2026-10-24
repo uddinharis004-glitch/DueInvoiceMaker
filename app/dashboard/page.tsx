@@ -2,7 +2,8 @@ import { requirePageAuth } from "@/lib/auth";
 import { query } from "@/lib/db";
 import AppShell from "@/components/AppShell";
 import Link from "next/link";
-import { money } from "@/lib/utils";
+import { formatShortDate, money } from "@/lib/utils";
+import StatusBadge from "@/components/StatusBadge";
 
 export default async function DashboardPage() {
   await requirePageAuth();
@@ -26,12 +27,14 @@ export default async function DashboardPage() {
   return (
     <AppShell>
       <div className="content">
-        <div className="toolbar" style={{ justifyContent: "space-between" }}>
+        <div className="toolbar justify-between">
           <div>
             <h1 className="page-title">Dashboard</h1>
             <p className="muted">Create, print and archive your company invoices.</p>
           </div>
-          <Link className="btn primary" href="/invoices/new">+ New Invoice</Link>
+          <Link className="btn btn-primary" href="/invoices/new">
+            <span aria-hidden="true">+</span> New invoice
+          </Link>
         </div>
 
         <div className="grid grid-4">
@@ -41,29 +44,29 @@ export default async function DashboardPage() {
           <div className="card"><div className="stat-label">Outstanding</div><div className="stat-value">{money(stats.outstanding)}</div></div>
         </div>
 
-        <div className="card" style={{ marginTop: 20 }}>
+        <section className="card mt-5" aria-labelledby="recent-invoices-heading">
           <div className="toolbar">
-            <h2 style={{ margin: 0 }}>Recent invoices</h2>
-            <Link className="btn" href="/invoices">View all</Link>
+            <h2 id="recent-invoices-heading" className="m-0 text-lg font-bold">Recent invoices</h2>
+            <Link className="btn btn-sm" href="/invoices">View all</Link>
           </div>
           <div className="table-wrap">
-            <table>
+            <table className="table responsive-table">
               <thead><tr><th>Invoice</th><th>Customer</th><th>Date</th><th>Total</th><th>Status</th></tr></thead>
               <tbody>
                 {recent.rows.map((r: any) => (
                   <tr key={r.invoice_number}>
-                    <td><Link href={`/invoices?invoice=${encodeURIComponent(r.invoice_number)}`}><strong>{r.invoice_number}</strong></Link></td>
-                    <td>{r.customer_snapshot?.name}</td>
-                    <td>{new Date(r.invoice_date).toLocaleDateString()}</td>
-                    <td>{money(r.total)}</td>
-                    <td><span className={`badge ${String(r.payment_status).toLowerCase()}`}>{r.payment_status}</span></td>
+                    <td data-label="Invoice"><Link className="link link-hover font-semibold" href={`/invoices?invoice=${encodeURIComponent(r.invoice_number)}`}>{r.invoice_number}</Link></td>
+                    <td data-label="Customer">{r.customer_snapshot?.name}</td>
+                    <td data-label="Date">{formatShortDate(r.invoice_date)}</td>
+                    <td data-label="Total" className="font-semibold">{money(r.total)}</td>
+                    <td data-label="Status"><StatusBadge status={String(r.payment_status)} /></td>
                   </tr>
                 ))}
                 {!recent.rows.length && <tr><td colSpan={5} className="muted">No invoices yet.</td></tr>}
               </tbody>
             </table>
           </div>
-        </div>
+        </section>
       </div>
     </AppShell>
   );
