@@ -28,20 +28,23 @@ function NavigationIcon({ name }: { name: (typeof navigation)[number]["icon"] })
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [navigationOpen, setNavigationOpen] = useState(false);
+  const currentPage = navigation.find((item) => item.href === "/invoices"
+    ? pathname === item.href || (pathname.startsWith("/invoices/") && pathname !== "/invoices/new")
+    : pathname === item.href);
 
   return (
     <div className="drawer min-h-screen lg:drawer-open">
       <input id="app-navigation" type="checkbox" className="drawer-toggle" checked={navigationOpen} onChange={(event) => setNavigationOpen(event.target.checked)} />
 
-      <div className="drawer-content flex min-w-0 flex-col bg-base-200/60">
-        <header className="navbar sticky top-0 z-30 min-h-16 border-b border-base-300 bg-base-100/95 px-3 backdrop-blur-sm sm:px-6 no-print">
+      <div className="drawer-content flex min-w-0 flex-col bg-base-200">
+        <header className="app-chrome navbar sticky top-0 z-30 min-h-16 border-b border-base-300/80 bg-base-100/80 px-3 backdrop-blur-xl sm:px-6 no-print">
           <div className="navbar-start gap-2">
             <label htmlFor="app-navigation" className="btn btn-square btn-ghost lg:hidden" aria-label="Open navigation">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
             </label>
             <div>
-              <strong className="block text-sm sm:text-base">Private Invoice System</strong>
-              <span className="hidden text-xs text-base-content/55 sm:block">Invoices, customers and payments</span>
+              <strong className="block text-sm tracking-tight sm:text-base">{currentPage?.label ?? "Invoice Maker"}</strong>
+              <span className="hidden text-xs text-base-content/60 sm:block">Private business workspace</span>
             </div>
           </div>
           <div className="navbar-end">
@@ -54,12 +57,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="drawer-side z-40 no-print">
         <label htmlFor="app-navigation" aria-label="Close navigation" className="drawer-overlay" />
-        <aside className="flex min-h-full w-72 flex-col bg-neutral p-4 text-neutral-content">
+        <aside className="app-chrome flex min-h-full w-72 flex-col border-r border-base-300/80 bg-base-100/90 p-4 text-base-content backdrop-blur-xl">
           <div className="mb-6 flex items-center gap-3 px-2 pt-2">
-            <div className="grid size-11 place-items-center rounded-field bg-primary text-xl font-black text-primary-content">D</div>
+            <div className="grid size-11 place-items-center rounded-[13px] bg-primary text-xl font-bold text-primary-content shadow-sm">D</div>
             <div>
-              <div className="font-bold tracking-tight">Invoice Maker</div>
-              <div className="text-xs text-neutral-content/60">Business workspace</div>
+              <div className="font-semibold tracking-tight">Invoice Maker</div>
+              <div className="text-xs text-base-content/60">Business workspace</div>
             </div>
           </div>
 
@@ -74,7 +77,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   <li key={item.href}>
                     <Link
                       href={item.href}
-                      className={active ? "menu-active font-semibold" : "text-neutral-content/75 hover:text-neutral-content"}
+                      className={active ? "menu-active font-semibold" : "text-base-content/70 hover:text-base-content"}
                       aria-current={active ? "page" : undefined}
                       onClick={() => setNavigationOpen(false)}
                     >
@@ -87,8 +90,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </ul>
           </nav>
 
-          <form action={logout} className="border-t border-neutral-content/15 pt-4">
-            <button type="submit" className="btn btn-ghost w-full justify-start text-neutral-content/75 hover:text-neutral-content">
+          <form action={logout} className="border-t border-base-300 pt-4">
+            <button type="submit" className="btn btn-ghost w-full justify-start text-base-content/70 hover:text-base-content">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3M21 19V5a2 2 0 0 0-2-2h-6" /></svg>
               Sign out
             </button>
