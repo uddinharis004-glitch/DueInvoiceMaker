@@ -1,8 +1,40 @@
 import { NextResponse } from "next/server";
 import { requireApiAuth } from "@/lib/auth";
 import { query } from "@/lib/db";
+import { getPagination } from "@/lib/pagination";
 
-export async function GET(){if(!(await requireApiAuth()))return NextResponse.json({error:"Unauthorized"},{status:401});const{rows}=await query("SELECT * FROM items ORDER BY name ASC");return NextResponse.json({items:rows});}
+export async function GET(request: Request) {
+  if (!(await requireApiAuth())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const url = new URL(request.url);
+  const { page, pageSize, offset } = getPagination(url.searchParams);
+  const search = url.searchParams.get("q")?.trim() ?? "";
+  const searchPattern = `%${search}%`;
+  const where = search ? "WHERE name ILIKE $1 OR description ILIKE $1 OR sku ILIKE $1" : "";
+  const values = search ? [searchPattern] : [];
+  const limitPosition = values.length + 1;
+  const offsetPosition = values.length + 2;
+
+  const [itemsResult, countResult] = await Promise.all([
+    query(
+      `SELECT * FROM items ${where}
+       ORDER BY created_at DESC, name ASC
+       LIMIT $${limitPosition} OFFSET $${offsetPosition}`,
+      [...values, pageSize, offset],
+    ),
+    query<{ total: string }>(`SELECT COUNT(*)::text AS total FROM items ${where}`, values),
+  ]);
+  const total = Number(countResult.rows[0]?.total ?? 0);
+
+  return NextResponse.json({
+    items: itemsResult.rows,
+    pagination: {
+      page,
+      pageSize,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    },
+  });
+}
 export async function POST(request:Request){
   if(!(await requireApiAuth()))return NextResponse.json({error:"Unauthorized"},{status:401});const b=await request.json();
   const{rows}=await query(`INSERT INTO items(name,description,default_price,sku,taxable) VALUES($1,$2,$3,$4,$5) RETURNING *`,[b.name,b.description??"",Number(b.default_price??0),b.sku??"",b.taxable!==false]);

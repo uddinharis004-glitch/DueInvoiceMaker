@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { getPagination } from "../lib/pagination.ts";
+import { getPagination, getVisiblePages } from "../lib/pagination.ts";
 
 test("uses the first page and eight customers by default", () => {
   assert.deepEqual(getPagination(new URLSearchParams()), {
@@ -24,4 +24,9 @@ test("rejects invalid page values and caps the page size", () => {
     pageSize: 50,
     offset: 0,
   });
+});
+
+test("shows a compact five-page window around the current page", () => {
+  assert.deepEqual(getVisiblePages(6, 12), [4, 5, 6, 7, 8]);
+  assert.deepEqual(getVisiblePages(1, 3), [1, 2, 3]);
 });

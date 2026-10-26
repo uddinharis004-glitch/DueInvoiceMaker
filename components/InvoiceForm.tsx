@@ -6,10 +6,14 @@ import { calculateInvoice, type InvoiceLineInput } from "@/lib/calculations";
 import { paymentValuesForMode, type PaymentEntryMode } from "@/lib/payment-entry";
 import InvoicePreview from "@/components/InvoicePreview";
 import PaymentEntry from "@/components/PaymentEntry";
+import CustomerSelectDialog from "@/components/CustomerSelectDialog";
+import ItemSelectDialog from "@/components/ItemSelectDialog";
 
 export default function InvoiceForm({company,addresses,customers,items,taxRates}:{company:any,addresses:any[],customers:any[],items:any[],taxRates:any[]}){
   const router=useRouter();
   const [customerId,setCustomerId]=useState("");
+  const [customerDialogOpen,setCustomerDialogOpen]=useState(false);
+  const [itemDialogOpen,setItemDialogOpen]=useState(false);
   const [addressId,setAddressId]=useState("");
   const [invoiceDate,setInvoiceDate]=useState(new Date().toISOString().slice(0,10));
   const [dueDate,setDueDate]=useState("");
@@ -89,6 +93,19 @@ export default function InvoiceForm({company,addresses,customers,items,taxRates}
   const paymentReady=paymentStatus==="UNPAID"||paymentMade>0;
 
   return <>
+    <CustomerSelectDialog
+      open={customerDialogOpen}
+      customers={customers}
+      selectedId={customerId}
+      onClose={()=>setCustomerDialogOpen(false)}
+      onSelect={(id)=>{setCustomerId(id);setCustomerDialogOpen(false);setError("");}}
+    />
+    <ItemSelectDialog
+      open={itemDialogOpen}
+      items={items}
+      onClose={()=>setItemDialogOpen(false)}
+      onSelect={(id)=>{addItem(id);setItemDialogOpen(false);}}
+    />
     <div className="toolbar justify-between"><div><h1 className="page-title">New invoice</h1><p className="muted">Build a Letter-size invoice from your saved records.</p></div><button type="button" className="btn btn-primary" onClick={save} disabled={busy || !customer || !address || !lines.length || !paymentReady}>{busy&&<span className="loading loading-spinner loading-sm" aria-hidden="true"/>}{busy?"Saving…":"Save invoice"}</button></div>
     {error&&<div role="alert" className="alert alert-error alert-soft mb-4">{error}</div>}
     <div className="invoice-editor">
@@ -97,7 +114,15 @@ export default function InvoiceForm({company,addresses,customers,items,taxRates}
           <h2 className="m-0 text-lg font-bold">Invoice details</h2>
           <div className="form-grid">
             <label>Store<select className="select" value={addressId} required onChange={e=>{setAddressId(e.target.value);if(!e.target.value)setCustomerId("");}}><option value="">Select a store</option>{addresses.map(a=><option key={a.id} value={a.id}>{a.name} — {a.city}, {a.state}</option>)}</select></label>
-            <label>Customer<select className="select" value={customerId} required disabled={!addressId} onChange={e=>setCustomerId(e.target.value)}><option value="">{addressId?"Select a customer":"Select a store first"}</option>{customers.map(c=><option key={c.id} value={c.id}>{c.name}{c.company_name?` — ${c.company_name}`:""}</option>)}</select></label>
+            <div className="grid gap-2 text-sm font-semibold"><span>Customer</span>
+              <div className="flex min-h-11 items-center justify-between gap-3 rounded-field border border-base-300 bg-base-100 px-3 py-2">
+                <span className="min-w-0">
+                  <strong className="block truncate text-sm">{customer?.name ?? (addressId ? "No customer selected" : "Select a store first")}</strong>
+                  {customer && <span className="block truncate text-xs font-normal text-base-content/60">{customer.company_name || customer.email || customer.phone || "Saved customer"}</span>}
+                </span>
+                <button type="button" className="btn btn-sm shrink-0" disabled={!addressId} onClick={()=>setCustomerDialogOpen(true)}>{customer ? "Change customer" : "Select customer"}</button>
+              </div>
+            </div>
             <label>Invoice date<input className="input" type="date" value={invoiceDate} onChange={e=>setInvoiceDate(e.target.value)}/></label>
             <label>Due date<input className="input" type="date" value={dueDate} onChange={e=>setDueDate(e.target.value)}/></label>
             <label className="full">Terms<textarea className="textarea" value={terms} onChange={e=>setTerms(e.target.value)}/></label>
@@ -106,10 +131,8 @@ export default function InvoiceForm({company,addresses,customers,items,taxRates}
 
         <div className="card">
           <h2 className="m-0 text-lg font-bold">Add saved item</h2>
-          <label className="mt-3">Product or service<select className="select" value="" onChange={e=>{addItem(e.target.value);e.currentTarget.value=""}}>
-            <option value="">Select an item or service</option>
-            {items.map(i=><option key={i.id} value={i.id}>{i.name} — ${Number(i.default_price).toFixed(2)}</option>)}
-          </select></label>
+          <p className="mt-1 text-sm text-base-content/60">Search your saved catalog or choose from 10 recent items.</p>
+          <button type="button" className="btn mt-4 w-full" onClick={()=>setItemDialogOpen(true)}>Select item or service</button>
         </div>
 
         <div className="card">

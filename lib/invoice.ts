@@ -15,14 +15,14 @@ export async function getAddresses() {
 
 export async function getCustomers() {
   const { rows } = await query<Customer>(
-    "SELECT * FROM customers ORDER BY name ASC",
+    "SELECT * FROM customers ORDER BY created_at DESC, name ASC",
   );
   return rows;
 }
 
 export async function getItems() {
   const { rows } = await query<Item>(
-    "SELECT * FROM items ORDER BY name ASC",
+    "SELECT * FROM items ORDER BY created_at DESC, name ASC",
   );
   return rows;
 }
