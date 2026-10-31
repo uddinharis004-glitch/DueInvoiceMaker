@@ -1,8 +1,8 @@
 import { money, formatInvoiceDate } from "@/lib/utils";
-import { invoiceLineAmount } from "@/lib/calculations";
+import { invoiceLineAmount, invoiceLineTax } from "@/lib/calculations";
 
 export default function InvoicePreview(props:any){
-  const {company,address,customer,invoiceNumber,invoiceDate,dueDate,terms,lines,subtotal,discount,tax,total,cashPaid=0,cardPaid=0,paymentMade,balanceDue,taxEnabled}=props;
+  const {company,address,customer,invoiceNumber,invoiceDate,dueDate,terms,lines,subtotal,discount,tax,total,cashPaid=0,cardPaid=0,paymentMade,balanceDue}=props;
   return <div className="invoice-page">
     <div className="invoice-header">
       <div className="invoice-company">
@@ -39,7 +39,7 @@ export default function InvoicePreview(props:any){
     </div>
 
     <table className="invoice-table">
-      <thead><tr><th style={{width:"6%"}}>#</th><th style={{width:"42%"}}>Description</th><th className="num" style={{width:"10%"}}>Qty</th><th className="num" style={{width:"14%"}}>Rate</th><th className="num" style={{width:"14%"}}>Discount</th><th className="num" style={{width:"14%"}}>Amount</th></tr></thead>
+      <thead><tr><th style={{width:"6%"}}>#</th><th style={{width:"35%"}}>Description</th><th className="num" style={{width:"8%"}}>Qty</th><th className="num" style={{width:"13%"}}>Rate</th><th className="num" style={{width:"13%"}}>Discount</th><th className="num" style={{width:"12%"}}>Tax</th><th className="num" style={{width:"13%"}}>Amount</th></tr></thead>
       <tbody>
         {lines.map((l:any,i:number)=><tr key={l.id}>
           <td>{i+1}</td>
@@ -47,6 +47,7 @@ export default function InvoicePreview(props:any){
           <td className="num">{Number(l.qty).toFixed(2)}</td>
           <td className="num">{money(l.rate)}</td>
           <td className="num">{Number(l.discountAmount)>0?money(l.discountAmount):"-"}</td>
+          <td className="num">{invoiceLineTax(l)>0?money(invoiceLineTax(l)):"-"}</td>
           <td className="num">{money(invoiceLineAmount(l))}</td>
         </tr>)}
       </tbody>
@@ -57,13 +58,13 @@ export default function InvoicePreview(props:any){
           <td></td>
           <td className="num">{money(subtotal)}</td>
           <td className="num">{discount>0?money(discount):"-"}</td>
+          <td className="num">{tax>0?money(tax):"-"}</td>
           <td className="num">{money(total)}</td>
         </tr>
       </tfoot>
     </table>
 
     <div className="totals">
-      {taxEnabled&&tax>0&&<div className="total-row"><span>Tax</span><span>{money(tax)}</span></div>}
       {cashPaid>0&&<div className="total-row payment"><span>Cash Payment (-)</span><span>{money(cashPaid)}</span></div>}
       {cardPaid>0&&<div className="total-row payment"><span>Card Payment (-)</span><span>{money(cardPaid)}</span></div>}
       {paymentMade>0&&cashPaid<=0&&cardPaid<=0&&<div className="total-row payment"><span>Payment Made (-)</span><span>{money(paymentMade)}</span></div>}

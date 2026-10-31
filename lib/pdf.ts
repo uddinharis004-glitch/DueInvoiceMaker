@@ -1,5 +1,5 @@
 import PDFDocument from "pdfkit";
-import { invoiceLineAmount } from "./calculations";
+import { invoiceLineAmount, invoiceLineTax } from "./calculations";
 import { formatInvoiceDate, money } from "./utils";
 
 const LEFT = 46;
@@ -31,11 +31,12 @@ function tableHeader(doc: PDFKit.PDFDocument, y: number) {
   doc.rect(LEFT, y, RIGHT - LEFT, 25).fill("#3f3f3f");
   doc.fillColor("white").font("Helvetica-Bold").fontSize(9);
   doc.text("#", LEFT + 8, y + 8, { width: 24 });
-  doc.text("Description", LEFT + 38, y + 8, { width: 210 });
-  doc.text("Qty", 305, y + 8, { width: 40, align: "right" });
-  doc.text("Rate", 355, y + 8, { width: 58, align: "right" });
-  doc.text("Discount", 423, y + 8, { width: 60, align: "right" });
-  doc.text("Amount", 493, y + 8, { width: 65, align: "right" });
+  doc.text("Description", LEFT + 38, y + 8, { width: 155 });
+  doc.text("Qty", 245, y + 8, { width: 40, align: "right" });
+  doc.text("Rate", 295, y + 8, { width: 55, align: "right" });
+  doc.text("Discount", 360, y + 8, { width: 55, align: "right" });
+  doc.text("Tax", 425, y + 8, { width: 55, align: "right" });
+  doc.text("Amount", 490, y + 8, { width: 68, align: "right" });
   return y + 25;
 }
 
@@ -88,17 +89,18 @@ export async function renderInvoicePdf(invoice: any) {
   let y = tableHeader(doc, Math.max(275, customerY + 18));
   lines.forEach((line: any, index: number) => {
     const description = [text(line.name), text(line.description)].filter(Boolean).join("\n");
-    const rowHeight = Math.max(30, doc.heightOfString(description, { width: 210 }) + 12);
+    const rowHeight = Math.max(30, doc.heightOfString(description, { width: 155 }) + 12);
     if (y + rowHeight > 650) { doc.addPage(); y = tableHeader(doc, 46); }
     doc.fillColor("#1f1f1f").font("Helvetica").fontSize(9);
     doc.text(String(index + 1), LEFT + 8, y + 7, { width: 24 });
-    doc.font("Helvetica-Bold").text(text(line.name), LEFT + 38, y + 7, { width: 210 });
-    if (line.description) doc.font("Helvetica").fillColor("#666666").fontSize(8).text(text(line.description), LEFT + 38, doc.y + 2, { width: 210 });
+    doc.font("Helvetica-Bold").text(text(line.name), LEFT + 38, y + 7, { width: 155 });
+    if (line.description) doc.font("Helvetica").fillColor("#666666").fontSize(8).text(text(line.description), LEFT + 38, doc.y + 2, { width: 155 });
     doc.fillColor("#1f1f1f").font("Helvetica").fontSize(9);
-    doc.text(number(line.qty).toFixed(2), 305, y + 7, { width: 40, align: "right" });
-    doc.text(money(line.rate), 355, y + 7, { width: 58, align: "right" });
-    doc.text(number(line.discountAmount) > 0 ? money(line.discountAmount) : "-", 423, y + 7, { width: 60, align: "right" });
-    doc.text(money(invoiceLineAmount(line)), 493, y + 7, { width: 65, align: "right" });
+    doc.text(number(line.qty).toFixed(2), 245, y + 7, { width: 40, align: "right" });
+    doc.text(money(line.rate), 295, y + 7, { width: 55, align: "right" });
+    doc.text(number(line.discountAmount) > 0 ? money(line.discountAmount) : "-", 360, y + 7, { width: 55, align: "right" });
+    doc.text(invoiceLineTax(line) > 0 ? money(invoiceLineTax(line)) : "-", 425, y + 7, { width: 55, align: "right" });
+    doc.text(money(invoiceLineAmount(line)), 490, y + 7, { width: 68, align: "right" });
     y += rowHeight;
     doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor("#dddddd").lineWidth(0.5).stroke();
   });
@@ -106,15 +108,15 @@ export async function renderInvoicePdf(invoice: any) {
   if (y + 28 > 650) { doc.addPage(); y = tableHeader(doc, 46); }
   doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor("#999999").lineWidth(0.75).stroke();
   doc.fillColor("#1f1f1f").font("Helvetica-Bold").fontSize(9);
-  doc.text(money(invoice.subtotal), 355, y + 9, { width: 58, align: "right" });
-  doc.text(number(invoice.discount) > 0 ? money(invoice.discount) : "-", 423, y + 9, { width: 60, align: "right" });
-  doc.text(money(invoice.total), 493, y + 9, { width: 65, align: "right" });
+  doc.text(money(invoice.subtotal), 295, y + 9, { width: 55, align: "right" });
+  doc.text(number(invoice.discount) > 0 ? money(invoice.discount) : "-", 360, y + 9, { width: 55, align: "right" });
+  doc.text(number(invoice.tax) > 0 ? money(invoice.tax) : "-", 425, y + 9, { width: 55, align: "right" });
+  doc.text(money(invoice.total), 490, y + 9, { width: 68, align: "right" });
   y += 28;
   doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor("#dddddd").lineWidth(0.5).stroke();
 
   if (y > 590) { doc.addPage(); y = 46; }
   y += 10;
-  if (invoice.tax_enabled && number(invoice.tax) > 0) y = totalRow(doc, "Tax", invoice.tax, y);
   if (number(invoice.cash_paid) > 0) y = totalRow(doc, "Cash Payment (-)", invoice.cash_paid, y, { color: "#d64545" });
   if (number(invoice.card_paid) > 0) y = totalRow(doc, "Card Payment (-)", invoice.card_paid, y, { color: "#d64545" });
   if (number(invoice.payment_made) > 0 && number(invoice.cash_paid) <= 0 && number(invoice.card_paid) <= 0) y = totalRow(doc, "Payment Made (-)", invoice.payment_made, y, { color: "#d64545" });
