@@ -1,4 +1,5 @@
 import { money, formatInvoiceDate } from "@/lib/utils";
+import { invoiceLineAmount } from "@/lib/calculations";
 
 export default function InvoicePreview(props:any){
   const {company,address,customer,invoiceNumber,invoiceDate,dueDate,terms,lines,subtotal,discount,tax,total,cashPaid=0,cardPaid=0,paymentMade,balanceDue,taxEnabled}=props;
@@ -46,7 +47,7 @@ export default function InvoicePreview(props:any){
           <td className="num">{Number(l.qty).toFixed(2)}</td>
           <td className="num">{money(l.rate)}</td>
           <td className="num">{Number(l.discountAmount)>0?money(l.discountAmount):"-"}</td>
-          <td className="num">{money(l.amount ?? l.net)}</td>
+          <td className="num">{money(invoiceLineAmount(l))}</td>
         </tr>)}
       </tbody>
       <tfoot>

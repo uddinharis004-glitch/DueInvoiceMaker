@@ -1,4 +1,5 @@
 import PDFDocument from "pdfkit";
+import { invoiceLineAmount } from "./calculations";
 import { formatInvoiceDate, money } from "./utils";
 
 const LEFT = 46;
@@ -97,7 +98,7 @@ export async function renderInvoicePdf(invoice: any) {
     doc.text(number(line.qty).toFixed(2), 305, y + 7, { width: 40, align: "right" });
     doc.text(money(line.rate), 355, y + 7, { width: 58, align: "right" });
     doc.text(number(line.discountAmount) > 0 ? money(line.discountAmount) : "-", 423, y + 7, { width: 60, align: "right" });
-    doc.text(money(line.amount ?? line.net), 493, y + 7, { width: 65, align: "right" });
+    doc.text(money(invoiceLineAmount(line)), 493, y + 7, { width: 65, align: "right" });
     y += rowHeight;
     doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor("#dddddd").lineWidth(0.5).stroke();
   });

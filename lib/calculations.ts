@@ -19,6 +19,14 @@ export type CalculatedLine = InvoiceLineInput & {
 
 const money = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
+export function invoiceLineAmount(line: { net?: unknown; amount?: unknown }) {
+  const net = Number(line.net);
+  if (line.net != null && Number.isFinite(net)) return net;
+
+  const amount = Number(line.amount);
+  return Number.isFinite(amount) ? amount : 0;
+}
+
 export function calculateInvoice(
   lines: InvoiceLineInput[],
   taxEnabled: boolean,
