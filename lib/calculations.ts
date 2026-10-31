@@ -67,7 +67,7 @@ export function calculateInvoice(
 
     const discountAmount = money(Math.min(gross, rawDiscount));
     const net = money(gross - discountAmount);
-    const taxAmount = taxEnabled && line.taxable ? money(net * (taxRate / 100)) : 0;
+    const taxAmount = taxEnabled && line.taxable ? money(gross * (taxRate / 100)) : 0;
     const amount = money(net + taxAmount);
 
     return {

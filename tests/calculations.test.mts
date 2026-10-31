@@ -26,6 +26,27 @@ test("adds tax to each item amount and the invoice total", () => {
   assert.equal(invoice.total, 110);
 });
 
+test("calculates item tax from the original rate before discount", () => {
+  const invoice = calculateInvoice([
+    {
+      id: "discounted-phone",
+      name: "Discounted phone",
+      description: "",
+      qty: 2,
+      rate: 50,
+      discountType: "fixed",
+      discountValue: 20,
+      taxable: true,
+    },
+  ], true, 10);
+
+  assert.equal(invoice.lines[0]?.gross, 100);
+  assert.equal(invoice.lines[0]?.discountAmount, 20);
+  assert.equal(invoice.lines[0]?.taxAmount, 10);
+  assert.equal(invoice.lines[0]?.amount, 90);
+  assert.equal(invoice.total, 90);
+});
+
 test("renders saved line tax and tax-inclusive amount from line values", () => {
   const line = { net: 185, taxAmount: 18.96, amount: 185 };
 
